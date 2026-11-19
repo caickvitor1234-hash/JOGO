@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sala de Jogos</title>
+<link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#0d2a2b"><link rel="icon" href="icon.svg">
+<style>
+:root{--bg:#e6f2ee;--ink:#10302f;--card:#fff;--line:#10302f;--gold:#ffc72c}
+@media(prefers-color-scheme:dark){:root{--bg:#0d2a2b;--ink:#e6f2ee;--card:#15393a;--line:#6fb3a8}}
+body.night{--bg:#0a0f24;--ink:#e6e6ff;--card:#171d3f;--line:#8a8ff0}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font:600 15px Nunito,system-ui,sans-serif;padding:env(safe-area-inset-top,0) 8px env(safe-area-inset-bottom,0)}
+#app{max-width:660px;margin:0 auto;text-align:center;padding:10px 0}
+h1,h2{font-family:"Bowlby One",system-ui,sans-serif;font-weight:400;margin:6px 0}
+h1{font-size:clamp(24px,7vw,38px)}h2{font-size:clamp(14px,4vw,19px)}
+input{font:inherit;padding:9px 12px;border:2px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);margin:4px}
+.btn,.btn2{font:400 clamp(12px,3.4vw,16px) "Bowlby One",system-ui,sans-serif;background:var(--gold);color:#10302f;border:2px solid var(--line);border-radius:12px;padding:9px 14px;box-shadow:0 3px 0 var(--line);cursor:pointer;margin:3px}
+.btn2{background:var(--card);color:var(--ink)}
+.btn:active{transform:translateY(3px);box-shadow:none}.btn:disabled{opacity:.45;cursor:not-allowed}
+.gs{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:12px 0}
+.gc{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:14px;border-top:10px solid var(--c)}
+.ga{font-size:52px}.l{font-size:13px;opacity:.9}.dn{color:#e03a3a}.up{color:#1a9a5b}
+.code{font:400 48px "Bowlby One",system-ui,sans-serif;letter-spacing:8px;margin:8px}
+.sc{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin:6px 0}
+.sc span{border:2px solid;border-radius:20px;padding:2px 9px;font-size:13px}
+.out{opacity:.4;text-decoration:line-through}
+#board{display:grid;grid-template:repeat(11,1fr)/repeat(11,1fr);gap:2px;aspect-ratio:1;width:100%}
+.t{border:1.5px solid var(--line);background:var(--card);position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:clamp(4.5px,1.35vw,9px);line-height:1.05;overflow:hidden;border-radius:3px;cursor:pointer}
+.t .b{position:absolute;top:0;left:0;right:0;height:18%}
+.t .ic{font-size:clamp(9px,2.6vw,17px);margin-top:12%}
+.t em{position:absolute;top:18%;right:0;font-style:normal;font-size:clamp(6px,1.6vw,10px)}
+.t.on{outline:3px solid var(--gold);z-index:2}
+.k{position:absolute;bottom:0;left:0;right:0;display:flex;justify-content:center;font-size:clamp(9px,2.5vw,16px)}
+#mid{grid-area:2/2/11/11;background:var(--card);border:2px dashed var(--line);border-radius:14px;padding:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;overflow:auto;cursor:default}
+.d{font-size:clamp(24px,6vw,38px);line-height:1}
+.ev{display:flex;flex-direction:column;align-items:center;gap:3px;margin:4px 0}
+.ev p{margin:0;font-size:clamp(10px,2.5vw,13px);line-height:1.25}
+.art{position:relative;width:min(100%,200px)}.art svg,.art img{width:100%;border-radius:10px;border:2px solid var(--line);display:block}
+.art img{position:absolute;inset:0;height:100%;object-fit:cover}
+.dl{font:400 clamp(14px,4vw,20px) "Bowlby One",system-ui,sans-serif}
+.vb{margin-bottom:6px}
+.art video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:10px;border:2px solid var(--line)}
+button:focus-visible,input:focus-visible,.t:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+</style></head><body>
+<div id="app"></div>
+<script>
+const $=s=>document.querySelector(s),A=$("#app");
+const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const GM={metropole:{n:"Metrópole",e:"🏙️",d:"Compre cidades, construa casas e hotéis e leve os rivais à falência.",min:2,max:6,c:"#2f6fed"},
+cidade:{n:"Cidade Dorme",e:"🌙",d:"De noite os assassinos agem, de dia a cidade vota. Descubra quem é o culpado.",min:4,max:12,c:"#6b3fa0"}};
+const G=["#8d5a3b","#3cc2e8","#e0559c","#ff9a2e","#e03a3a","#2f6fed","#1fa971","#9b5de5"],PC=["#ff5d5d","#2f6fed","#1fa971","#ff9a2e","#9b5de5","#00b8d9"],PE=["🚗","🛵","🚂","✈️","🚁","⛵"];
+const IC={s:"🏁",c:"🎁",x:"💸",j:"🔒",f:"🌴",g:"🚓",r:"🚆",u:"💡",l:"🎰",v:"✈️",m:"🤝",e:"🎉",o:"🚧",b:"📈",a:"🔨",q:"🏛️"};
+const LM={"Cuiabá":"🐆","Campo Grande":"🦜","Palmas":"🌅","Feira de Negócios":"🤝","Aracaju":"🦀","Natal":"🏖️","João Pessoa":"☀️","Festival da Cidade":"🎉","Teresina":"🌊","Obras Públicas":"🚧","Florianópolis":"🏄","Bolsa de Títulos":"📈","Belém":"🥭","Fortaleza":"🏝️","Recife":"🌉","Leilão Municipal":"🔨","Porto Alegre":"🧉","Salvador":"🥁","Conselho da Cidade":"🏛️","Brasília":"🏛️","São Paulo":"🏙️","Rio de Janeiro":"🗽","Companhia de Luz":"💡","Companhia de Água":"💧"};
+let S=null,W,retry=0,muted=false,name="",toast="",sel=null,EVK="",lotteryPick=[],marketTradeOpen=false;
+const ld=()=>{try{return JSON.parse(localStorage.room)}catch{return null}},sv=o=>{try{localStorage.room=JSON.stringify(o)}catch{}},cl=()=>{try{localStorage.removeItem("room")}catch{}};
+try{name=localStorage.nome||""}catch{}
+const slug=n=>n.normalize("NFD").replace(/[^a-z0-9]/gi,"").toLowerCase();
+const pos=i=>i<10?[11,11-i]:i<20?[11-(i-10),1]:i<30?[1,1+(i-20)]:[1+(i-30),11];
+
+/* ---------- conexão com reconexão automática ---------- */
+const send=o=>W&&W.readyState==1&&W.send(JSON.stringify(o));
+function conn(){
+  W=new WebSocket((location.protocol=="https:"?"wss://":"ws://")+location.host);
+  W.onopen=()=>{retry=0;const k=ld();if(k)send({t:"rejoin",room:k.room,id:k.id})};
+  W.onmessage=e=>{const m=JSON.parse(e.data);
+    if(m.t=="state"){if(!S||S.go!=m.go)toast="";S=m;const k=JSON.stringify(m.g&&m.g.ev);if(k!=EVK){EVK=k;sel=null;lotteryPick=[]}sv({room:m.room,id:m.you});if(LS)syncVoice();draw()}
+    else if(m.t=="sig")onSig(m.from,m.d);
+    else if(m.t=="gone"){cl();S=null;draw()}
+    else if(m.t=="err"){toast=esc(m.m);draw()}};
+  W.onclose=()=>setTimeout(conn,Math.min(1000*2**retry++,8000));
+}
+const act=o=>{toast="";send({t:"act",...o})},st=()=>{toast="";send({t:"start"})};
+const mk=k=>send({t:"create",game:k,name:name||"Jogador"}),jn=()=>send({t:"join",room:$("#cd").value.trim(),name:name||"Jogador"});
+function leave(){send({t:"leave"});cl();S=null;if(LS){LS.getTracks().forEach(t=>t.stop());LS=null;Object.keys(PCs).forEach(hang);send({t:"voice",on:false})}draw()}
+
+/* ---------- voz nativa (WebRTC, sem conta externa) ---------- */
+let LS=null,PCs={},ICE=[{urls:"stun:stun.l.google.com:19302"}],audios={};
+async function voice(){
+  if(LS){muted=!muted;micSync();draw();return}
+  try{
+    LS=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+    try{ICE=await(await fetch("/ice")).json()}catch{}
+    muted=false;send({t:"voice",on:true});
+    S.pl.forEach(q=>{if(q.v&&q.id!=S.you)call(q.id)});
+    micSync();draw();
+  }catch(e){LS=null;toast="Não consegui usar o microfone. Permita o acesso no navegador (o site precisa estar em HTTPS).";draw()}
+}
+function peer(id){
+  if(PCs[id])return PCs[id];
+  const pc=new RTCPeerConnection({iceServers:ICE});pc.q=[];PCs[id]=pc;
+  LS.getTracks().forEach(t=>pc.addTrack(t,LS));
+  pc.onicecandidate=e=>e.candidate&&send({t:"sig",to:id,d:{c:e.candidate}});
+  pc.ontrack=e=>{let a=audios[id];if(!a){a=audios[id]=document.createElement("audio");a.autoplay=true;a.playsInline=true;document.body.appendChild(a)}a.srcObject=e.streams[0]};
+  pc.onconnectionstatechange=()=>{if(pc.connectionState=="failed"){toast="A voz falhou com um jogador (rede restrita). O administrador pode configurar um servidor TURN (veja o LEIA-ME).";hang(id);draw()}};
+  return pc;
+}
+async function call(id){const pc=peer(id),o=await pc.createOffer();await pc.setLocalDescription(o);send({t:"sig",to:id,d:{s:pc.localDescription}})}
+async function onSig(from,d){
+  if(!LS)return;
+  const pc=peer(from);
+  if(d.s){
+    if(d.s.type=="offer"&&pc.signalingState!="stable"){if(S.you>from)return;await pc.setLocalDescription({type:"rollback"})}
+    await pc.setRemoteDescription(d.s);
+    pc.q.forEach(x=>pc.addIceCandidate(x).catch(()=>{}));pc.q=[];
+    if(d.s.type=="offer"){const a=await pc.createAnswer();await pc.setLocalDescription(a);send({t:"sig",to:from,d:{s:pc.localDescription}})}
+  }else if(d.c){pc.remoteDescription?pc.addIceCandidate(d.c).catch(()=>{}):pc.q.push(d.c)}
+}
+function hang(id){if(PCs[id]){PCs[id].close();delete PCs[id]}if(audios[id]){audios[id].remove();delete audios[id]}}
+function syncVoice(){Object.keys(PCs).forEach(id=>{const q=S.pl.find(x=>x.id==id);if(!q||!q.v)hang(id)})}
+function micSync(){
+  if(!LS)return;
+  const night=S&&S.game=="cidade"&&S.g&&(S.g.ph=="night"||!S.g.me.a);
+  LS.getAudioTracks().forEach(t=>t.enabled=!muted&&!night);
+}
+const voiceBar=()=>'<div class="vb"><button class="btn2" onclick="voice()">'+(LS?(muted?"🔇 Ativar microfone":"🎙️ Silenciar"):"🎙️ Entrar no chat de voz")+'</button> <span class="l">'+S.pl.filter(q=>q.v).length+" na voz</span></div>"+(toast?'<p class="dn">'+esc(toast)+"</p>":"");
+
+/* ---------- telas ---------- */
+function draw(){
+  document.body.className=S&&S.game=="cidade"&&S.g&&S.g.ph=="night"?"night":"";
+  A.innerHTML=!S?menu():!S.go?lobby():S.game=="metropole"?metro():cidade();
+  micSync();
+}
+const menu=()=>'<h1>Sala de Jogos</h1><p class="l">Jogue com os amigos, cada um no seu aparelho, com chat de voz.</p><input id="nm" placeholder="Seu nome" maxlength="14" value="'+esc(name)+'" oninput="name=this.value;try{localStorage.nome=name}catch{}">'
++'<div class="gs">'+Object.entries(GM).map(([k,g])=>'<div class="gc" style="--c:'+g.c+'"><div class="ga">'+g.e+"</div><h2>"+g.n+"</h2><p>"+g.d+'</p><p class="l">'+g.min+" a "+g.max+' jogadores</p><button class="btn" onclick="mk(\''+k+'\')">Criar sala</button></div>').join("")+'<div class="gc" style="--c:#999"><div class="ga">🎲</div><h2>Mais jogos em breve</h2><p class="l">Novos jogos aparecem aqui no menu.</p></div></div>'
++'<div><input id="cd" placeholder="Código da sala" maxlength="6" style="text-transform:uppercase;width:150px"><button class="btn" onclick="jn()">Entrar numa sala</button></div>'+(toast?'<p class="dn">'+esc(toast)+"</p>":"");
+function lobby(){
+  const g=GM[S.game],h=S.you==S.host;
+  return voiceBar()+"<h1>"+g.e+" "+g.n+'</h1><div class="code">'+S.room+'</div><p class="l">Passe este código aos amigos para entrarem na sala.</p><div class="sc">'
+  +S.pl.map(q=>'<span style="border-color:'+(q.on?"#1fa971":"#999")+'">'+esc(q.name)+(q.id==S.host?" 👑":"")+"</span>").join("")+"</div>"
+  +(h?'<button class="btn" onclick="st()"'+(S.pl.length<g.min?" disabled":"")+">Começar ("+S.pl.length+"/"+g.min+" mínimo)</button>":'<p class="l">Aguardando o anfitrião começar...</p>')
+  +'<div><button class="btn2" onclick="leave()">Sair</button></div>';
+}
+function art(i,T){
+  const t=T[i],c=t[1]=="p"?G[t[3]]:{s:"#ffc72c",c:"#9b5de5",x:"#e03a3a",j:"#777",f:"#1fa971",g:"#2f6fed",r:"#555",u:"#e0a800",m:"#16a085",e:"#e84393",o:"#d35400",b:"#2980b9",a:"#8e44ad",q:"#34495e"}[t[1]];
+  let b="";for(let j=0;j<9;j++){const h=14+((i*7+j*13)%26);b+='<rect x="'+(j*13+2)+'" y="'+(56-h)+'" width="11" height="'+h+'" fill="#10302f" opacity=".55"/>'}
+  return '<svg viewBox="0 0 120 56"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+c+'"/><stop offset="1" stop-color="#ffffff66"/></linearGradient></defs><rect width="120" height="56" fill="url(#g)"/><circle cx="102" cy="12" r="7" fill="#ffe27a"/>'+b+'<text x="60" y="42" font-size="32" text-anchor="middle">'+(LM[t[0]]||IC[t[1]])+"</text></svg>";
+}
+function evHtml(ev,T){
+  if(!ev)return '<p class="l">Role os dados para jogar.</p>';
+  const t=T[ev.i];
+  return '<div class="ev"><div class="art">'+art(ev.i,T)+'<img src="img/'+slug(t[0])+'.jpg" alt="" onerror="this.remove()"><video src="img/'+slug(t[0])+'.mp4" autoplay muted loop playsinline onerror="this.remove()"></video></div><h2>'+esc(ev.ti)+"</h2><p>"+esc(ev.tx)+"</p>"
+  +(ev.d?'<div class="dl '+(ev.d>0?"up":"dn")+'">'+(ev.d>0?"+":"−")+"R$"+Math.abs(ev.d)+"</div>":"")+"</div>";
+}
+const btn=(l,a)=>'<button class="btn" onclick="act({a:\''+a+'\'})">'+l+"</button>";
+function tcard(g){
+  const i=sel,t=g.T[i],o=g.own[i],my=g.me==g.cur&&g.p[g.cur].a&&g.ph!="win",ow=o>=0&&o==g.me,hc=Math.round((t[2]||0)/20)*10,own=["p","r","u"].includes(t[1]);
+  const sp={s:"Quem passa pela Largada recebe R$200.",c:"Aqui você pega uma carta de Sorte.",m:"Feira de Negócios: feche um contrato com lucro garantido ou passe.",e:"Festival: organize o evento ou participe das atividades.",o:"Obras Públicas: avance três casas ou receba uma compensação.",b:"Bolsa de Títulos: compre um título municipal com retorno fixo ou passe.",a:"Leilão Municipal: uma propriedade livre será leiloada entre os jogadores.",q:"Conselho da Cidade: receba um incentivo ou contribua para o fundo comunitário.",l:"Mega-Sena: escolha seis números de 1 a 60 e concorra a até R$5.000.",v:"Você ganhou uma viagem grátis para uma cidade do tabuleiro e ajuda de custo.",x:"Quem para aqui paga R$"+t[2]+" de imposto.",j:"Só visitando: nada acontece. Quem é preso perde uma vez.",f:"Descanso: nada acontece.",g:"Quem para aqui vai direto para a cadeia."};
+  let tx=own?"Preço R$"+t[2]+(o>=0?". Dono: "+esc(g.p[o].n)+(g.mort[i]?" (hipotecada)":"")+(g.h[i]?". Tem "+(g.h[i]==5?"um hotel":g.h[i]+" casa(s)"):""):". Sem dono ainda."):sp[t[1]];
+  if(t[1]=="p")tx+=" Aluguel base R$"+t[2]/10+", maior com todas as cidades da cor e com casas.";
+  if(t[1]=="r")tx+=" Aluguel R$25, dobrando a cada ferrovia do dono.";
+  if(t[1]=="u")tx+=" Aluguel de 4 vezes os dados (10 vezes com as duas companhias).";
+  const B=(l,a)=>'<button class="btn" onclick="act({a:\''+a+"',i:"+i+'});sel=null">'+l+"</button>";
+  let bt="";
+  if(ow&&my&&own){
+    if(t[1]=="p"&&!g.mort[i])bt+=B("Construir R$"+hc,"build")+(g.h[i]?B("Vender casa +R$"+hc/2,"sell"):"");
+    bt+=g.mort[i]?B("Resgatar −R$"+Math.round(t[2]/2*1.1),"unmort"):B("Hipotecar +R$"+t[2]/2,"mort");
+  }
+  return '<div class="ev"><div class="art">'+art(i,g.T)+"</div><h2>"+t[0]+"</h2><p>"+tx+"</p><div>"+bt+'<button class="btn2" onclick="sel=null;draw()">Fechar</button></div></div>';
+}
+function toggleLot(n){if(lotteryPick.includes(n))lotteryPick=lotteryPick.filter(x=>x!==n);else if(lotteryPick.length<6)lotteryPick.push(n);draw()}
+function submitLot(){if(lotteryPick.length!==6){toast="Escolha seis números antes de confirmar.";draw();return}act({a:"lottery",numbers:lotteryPick.slice()});lotteryPick=[]}
+function lotteryUI(g){return '<div><b>🎰 '+(g.lotteryFree?"Bilhete grátis":"Aposta: R$50")+'</b><p class="l">Escolha 6 números de 1 a 60 ('+lotteryPick.length+'/6)</p><div style="display:grid;grid-template-columns:repeat(10,1fr);gap:3px;max-width:380px;margin:6px auto">'+Array.from({length:60},(_,i)=>i+1).map(n=>'<button class="btn2" style="padding:7px 2px;background:'+(lotteryPick.includes(n)?'var(--gold)':'var(--card)')+'" onclick="toggleLot('+n+')">'+n+'</button>').join('')+'</div><p class="l">3 acertos: R$100 · 4: R$400 · 5: R$1.500 · 6: R$5.000</p><button class="btn" onclick="submitLot()" '+(lotteryPick.length!==6?'disabled':'')+'>Confirmar números</button> <button class="btn2" onclick="act({a:\'lotterySkip\'})">Não apostar</button></div>'}
+function travelUI(g){return '<div><b>✈️ Viagem grátis!</b><p class="l">Escolha seu destino. Você não paga passagem e recebe R$'+(g.travelReward||150)+' de ajuda de custo.</p><div style="display:flex;flex-wrap:wrap;justify-content:center">'+g.trips.map(t=>'<button class="btn" onclick="act({a:\'travel\',i:'+t.i+'})">'+esc(t.n)+'</button>').join('')+'</div><button class="btn2" onclick="act({a:\'travelSkip\'})">Não viajar agora</button></div>'}
+function auctionUI(g){const a=g.auction;if(!a)return `<p>Preparando leilão...</p>`;return `<div><b>🔨 Leilão: ${esc(g.T[a.i][0])}</b><p class="l">Maior lance: R$${a.high}${a.leader>=0?' — '+esc(g.p[a.leader].n):' — nenhum'}</p><p class="l">Lance mínimo agora: R$${a.minimum}</p><input id="bid" type="number" min="${a.minimum}" step="10" placeholder="Seu lance" style="width:130px"><button class="btn" onclick="sendBid()">Dar lance</button> <button class="btn2" onclick="act({a:'auctionPass'})">Passar</button></div>`}
+function sendBid(){const v=Number($("#bid")?.value);act({a:"auctionBid",amount:v})}
+function specialUI(g){if(g.ph==="market"){if(marketTradeOpen)return tradeOfferUI(g);return `<div><b>🤝 Feira de Negócios</b><p>Feche um contrato: pague R$50 e receba R$150.</p><button class="btn" onclick="act({a:'marketDeal'})">Fechar contrato</button> <button class="btn2" onclick="openTradeOffer()">Negociar propriedade</button> <button class="btn2" onclick="act({a:'marketPass'})">Passar</button></div>`}if(g.ph==="festival")return `<div><b>🎉 Festival da Cidade</b><p>Organizar custa R$80 e rende R$200; os outros jogadores recebem R$20.</p><button class="btn" onclick="act({a:'festivalHost'})">Organizar festival</button> <button class="btn2" onclick="act({a:'festivalEnjoy'})">Só participar (+R$40)</button></div>`;if(g.ph==="works")return `<div><b>🚧 Obras Públicas</b><p>Escolha avançar três casas ou receber R$70 de compensação.</p><button class="btn" onclick="act({a:'worksAdvance'})">Avançar 3 casas</button> <button class="btn2" onclick="act({a:'worksGrant'})">Receber R$70</button></div>`;if(g.ph==="bonds")return `<div><b>📈 Bolsa de Títulos</b><p>Pague R$100 e receba R$140, ou guarde seu dinheiro.</p><button class="btn" onclick="act({a:'bondBuy'})">Comprar título</button> <button class="btn2" onclick="act({a:'bondPass'})">Não investir</button></div>`;if(g.ph==="council")return `<div><b>🏛️ Conselho da Cidade</b><p>Receba R$100 ou contribua com R$30 para que todos recebam R$20.</p><button class="btn" onclick="act({a:'councilBenefit'})">Receber R$100</button> <button class="btn2" onclick="act({a:'councilShare'})">Contribuir R$30</button></div>`;return ''}
+function tradeOfferUI(g){if(!g.marketProperties.length)return `<p>Não há propriedades de outros jogadores disponíveis para negociar agora.</p><button class="btn2" onclick="closeTradeOffer()">Voltar</button>`;return `<div><b>🤝 Fazer proposta</b><p class="l">Escolha uma propriedade sem construções e ofereça um valor. O dono decide se aceita.</p><select id="offerProperty">${g.marketProperties.map(x=>`<option value="${x.i}">${esc(x.n)} — ${esc(x.owner)}</option>`).join('')}</select><input id="offerAmount" type="number" min="1" placeholder="Oferta em R$" style="width:130px"><button class="btn" onclick="sendOffer()">Enviar proposta</button> <button class="btn2" onclick="closeTradeOffer()">Cancelar</button></div>`}
+function openTradeOffer(){marketTradeOpen=true;draw()}
+function closeTradeOffer(){marketTradeOpen=false;act({a:"marketPass"})}
+function sendOffer(){marketTradeOpen=false;act({a:"marketOffer",i:Number($("#offerProperty")?.value),amount:Number($("#offerAmount")?.value)})}
+function tradeResponseUI(g){const t=g.trade;return `<div><b>📨 Proposta de negócio</b><p>${esc(t.buyerName)} oferece R$${t.amount} pela propriedade <b>${esc(t.property)}</b>.</p><button class="btn" onclick="act({a:'tradeAccept'})">Aceitar proposta</button> <button class="btn2" onclick="act({a:'tradeReject'})">Recusar</button></div>`}
+function metro(){
+  const g=S.g,T=g.T,cur=g.p[g.cur],mine=g.ph=="auction"?!!g.auction&&g.auction.turn==g.me:g.ph=="trade"?!!g.trade&&g.trade.seller==g.me:g.me==g.cur&&cur.a,f="⚀⚁⚂⚃⚄⚅";
+  let b="";
+  T.forEach((t,i)=>{const[r,c]=pos(i);
+    b+='<div class="t'+(cur.pos==i?" on":"")+'" style="grid-area:'+r+" / "+c+(g.own[i]>=0?";box-shadow:inset 0 -5px 0 "+PC[g.own[i]]:"")+'" onclick="sel='+i+';draw()">'
+    +(t[1]=="p"?'<i class="b" style="background:'+G[t[3]]+'"></i>':"")+'<span class="ic">'+(LM[t[0]]||IC[t[1]])+"</span><span>"+t[0]+(t[2]?"<br>R$"+t[2]:"")+"</span>"
+    +(g.mort[i]?"<em>🔒</em>":g.h[i]?"<em>"+(g.h[i]==5?"🏨":"🏠".repeat(g.h[i]))+"</em>":"")+'<div class="k">'+g.p.filter(q=>q.a&&q.pos==i).map(q=>PE[q.i]).join("")+"</div></div>"});
+  const a1=g.ph==="win"?btn("Voltar ao menu","x").replace("act({a:'x'})","leave()"):!mine?'<span class="l">Vez de '+esc(g.ph==="auction"?g.auction.turnName:g.ph==="trade"?g.trade.sellerName:cur.n)+"...</span>":g.ph==="roll"?btn("Rolar dados","roll"):g.ph==="buy"?'<button class="btn" onclick="act({a:\'buy\'})"'+(cur.m<T[cur.pos][2]?" disabled":"")+">Comprar por R$"+T[cur.pos][2]+"</button>"+btn("Leiloar","skip"):g.ph==="lottery"?lotteryUI(g):g.ph==="travel"?travelUI(g):g.ph==="auction"?auctionUI(g):g.ph==="trade"?tradeResponseUI(g):["market","festival","works","bonds","council"].includes(g.ph)?specialUI(g):btn("Próximo jogador","next");
+  const head=g.ph=="win"?"<h2>🏆 "+esc(g.p.find(q=>q.a).n)+" venceu!</h2>":"<div>"+PE[cur.i]+" <b>"+esc(cur.n)+"</b> · R$"+cur.m+"</div>";
+  return voiceBar()+'<div id="board">'+b+'<div id="mid">'+head+'<div class="d">'+f[g.dice[0]-1]+" "+f[g.dice[1]-1]+"</div>"+(sel!=null?tcard(g):evHtml(g.ev,T))+"<div>"+a1+'</div><div class="sc">'
+  +g.p.map(q=>'<span class="'+(q.a?"":"out")+'" style="border-color:'+PC[q.i]+'">'+PE[q.i]+" "+esc(q.n)+" R$"+q.m+"</span>").join("")+"</div></div></div>"
+  +'<p class="l">Toque em qualquer casa para ver os detalhes. Na sua vez, nas suas propriedades, dá para construir, vender casas e hipotecar.</p>';
+}
+const scene=n=>'<svg viewBox="0 0 120 36" style="width:min(100%,280px);border-radius:12px;border:2px solid var(--line)"><rect width="120" height="36" fill="'+(n?"#1b2152":"#7ad0f0")+'"/>'+(n?'<circle cx="98" cy="9" r="6" fill="#f6f1c8"/><circle cx="20" cy="8" r=".9" fill="#fff"/><circle cx="48" cy="14" r=".9" fill="#fff"/><circle cx="70" cy="6" r=".9" fill="#fff"/>':'<circle cx="98" cy="9" r="6" fill="#ffd23f"/>')+[0,1,2,3,4,5,6,7].map(i=>{const h=12+(i*7)%12;return'<rect x="'+(i*15+2)+'" y="'+(36-h)+'" width="12" height="'+h+'" fill="'+(n?"#0a0f24":"#3b5b6b")+'"/>'+(n?'<rect x="'+(i*15+6)+'" y="'+(36-h+3)+'" width="3" height="3" fill="#ffd23f"/>':"")}).join("")+"</svg>";
+const ROLES={assassino:["🔪","Assassino","Mate um inocente por noite sem ser descoberto."],detetive:["🕵️","Detetive","Investigue uma pessoa por noite."],"médico":["🩺","Médico","Proteja uma pessoa por noite."],"cidadão":["🏠","Cidadão","Descubra os assassinos e vote para expulsá-los."]};
+const pick=(l,a)=>l.map(q=>'<button class="btn" onclick="act({a:\''+a+"',t:'"+q.id+'\'})">'+esc(q.n)+"</button>").join(" ");
+function cidade(){
+  const g=S.g,me=g.me,h=S.you==S.host,r=ROLES[me.r],al=g.p.filter(q=>q.a);let body="";
+  if(g.ph=="end")body="<h2>"+esc(g.win)+" venceram!</h2>"+g.p.map(q=>"<div>"+ROLES[q.r][0]+" "+esc(q.n)+" — "+ROLES[q.r][1]+(q.a?"":" (fora)")+"</div>").join("")+'<button class="btn" onclick="leave()">Voltar ao menu</button>';
+  else if(!me.a)body="<p>Você está fora do jogo, mas pode assistir. Não revele nada!</p>";
+  else if(g.ph=="night")body=me.r=="cidadão"||g.acted?"<p>Você dorme... aguarde os outros.</p>":"<p>Quem você escolhe?</p>"+pick(al.filter(q=>q.id!=me.id&&!(me.r=="assassino"&&q.r=="assassino")),"night");
+  else body=g.voted?"<p>Voto registrado. Aguarde os outros ("+g.nv+"/"+al.length+").</p>":"<p>Em quem você vota para expulsar?</p>"+pick(al.filter(q=>q.id!=me.id),"vote");
+  return voiceBar()+scene(g.ph=="night")+"<h1>"+(g.ph=="night"?"🌙 Noite ":"☀️ Dia ")+g.day+'</h1><div class="ev"><div class="ga">'+r[0]+"</div><h2>Você é "+r[1]+"</h2><p>"+r[2]+"</p></div>"
+  +(g.ev?"<h2>"+esc(g.ev.ti)+"</h2><p>"+esc(g.ev.tx)+"</p>":"")+(g.res?"<p>🔎 "+esc(g.res)+"</p>":"")+"<div>"+body+"</div>"
+  +'<div class="sc">'+g.p.map(q=>'<span class="'+(q.a?"":"out")+'">'+esc(q.n)+(q.r&&g.ph!="end"&&q.id!=me.id?" 🔪":"")+"</span>").join("")+"</div>"
+  +(h&&g.ph!="end"?'<button class="btn2" onclick="act({a:\'force\'})">Encerrar etapa agora</button>':"");
+}
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+conn();draw();
+</script></body></html>
