@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sala de Jogos</title>
+<link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
+<link rel="manifest" href="manifest.json"><meta name="theme-color" content="#0d2a2b"><link rel="icon" href="icon.svg">
+<style>
+:root{--bg:#e6f2ee;--ink:#10302f;--card:#fff;--line:#10302f;--gold:#ffc72c}
+@media(prefers-color-scheme:dark){:root{--bg:#0d2a2b;--ink:#e6f2ee;--card:#15393a;--line:#6fb3a8}}
+body.night{--bg:#0a0f24;--ink:#e6e6ff;--card:#171d3f;--line:#8a8ff0}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font:600 15px Nunito,system-ui,sans-serif;padding:env(safe-area-inset-top,0) 8px env(safe-area-inset-bottom,0)}
+#app{max-width:660px;margin:0 auto;text-align:center;padding:10px 0}
+h1,h2{font-family:"Bowlby One",system-ui,sans-serif;font-weight:400;margin:6px 0}
+h1{font-size:clamp(24px,7vw,38px)}h2{font-size:clamp(14px,4vw,19px)}
+input{font:inherit;padding:9px 12px;border:2px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);margin:4px}
+.btn,.btn2{font:400 clamp(12px,3.4vw,16px) "Bowlby One",system-ui,sans-serif;background:var(--gold);color:#10302f;border:2px solid var(--line);border-radius:12px;padding:9px 14px;box-shadow:0 3px 0 var(--line);cursor:pointer;margin:3px}
+.btn2{background:var(--card);color:var(--ink)}
+.btn:active{transform:translateY(3px);box-shadow:none}.btn:disabled{opacity:.45;cursor:not-allowed}
+.gs{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:12px 0}
+.gc{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:14px;border-top:10px solid var(--c)}
+.ga{font-size:52px}.l{font-size:13px;opacity:.9}.dn{color:#e03a3a}.up{color:#1a9a5b}
+.code{font:400 48px "Bowlby One",system-ui,sans-serif;letter-spacing:8px;margin:8px}
+.sc{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin:6px 0}
+.sc span{border:2px solid;border-radius:20px;padding:2px 9px;font-size:13px}
+.out{opacity:.4;text-decoration:line-through}
+#board{display:grid;grid-template:repeat(11,1fr)/repeat(11,1fr);gap:2px;aspect-ratio:1;width:100%}
+.t{border:1.5px solid var(--line);background:var(--card);position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;font-size:clamp(4.5px,1.35vw,9px);line-height:1.05;overflow:hidden;border-radius:3px;cursor:pointer}
+.t .b{position:absolute;top:0;left:0;right:0;height:18%}
+.t .ic{font-size:clamp(9px,2.6vw,17px);margin-top:12%}
+.t em{position:absolute;top:18%;right:0;font-style:normal;font-size:clamp(6px,1.6vw,10px)}
+.t.on{outline:3px solid var(--gold);z-index:2}
+.k{position:absolute;top:16%;left:0;right:0;display:flex;justify-content:center;font-size:clamp(9px,2.5vw,16px)}
+#mid{grid-area:2/2/11/11;background:var(--card);border:2px dashed var(--line);border-radius:14px;padding:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;overflow:auto;cursor:default}
+.d{font-size:clamp(24px,6vw,38px);line-height:1}
+.ev{display:flex;flex-direction:column;align-items:center;gap:3px;margin:4px 0}
+.ev p{margin:0;font-size:clamp(10px,2.5vw,13px);line-height:1.25}
+.art{position:relative;width:min(100%,200px)}.art svg,.art img{width:100%;border-radius:10px;border:2px solid var(--line);display:block}
+.art img{position:absolute;inset:0;height:100%;object-fit:cover}
+.dl{font:400 clamp(14px,4vw,20px) "Bowlby One",system-ui,sans-serif}
+.vb{margin-bottom:6px}
+.t .ti{position:absolute;top:0;left:0;right:0;height:58%}.t .ti svg{width:100%;height:100%;display:block}.t .nm{padding:1px;font-weight:800;position:relative;z-index:1}
+.art video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:10px;border:2px solid var(--line)}
+button:focus-visible,input:focus-visible,.t:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+</style></head><body>
+<div id="app"></div>
+<script>
+const $=s=>document.querySelector(s),A=$("#app");
+const GM={metropole:{n:"Metrópole",e:"🏙️",d:"Compre cidades, construa casas e hotéis e leve os rivais à falência.",min:2,max:6,c:"#2f6fed"},
+cidade:{n:"Cidade Dorme",e:"🌙",d:"De noite os assassinos agem, de dia a cidade vota. Descubra quem é o culpado.",min:4,max:12,c:"#6b3fa0"}};
+const G=["#8d5a3b","#3cc2e8","#e0559c","#ff9a2e","#e03a3a","#2f6fed","#1fa971","#9b5de5"],PC=["#ff5d5d","#2f6fed","#1fa971","#ff9a2e","#9b5de5","#00b8d9"],PE=["🚗","🛵","🚂","✈️","🚁","⛵"];
+const IC={s:"🏁",c:"🍀",k:"🧰",x:"💸",j:"🔒",f:"🌴",g:"🚓",r:"🚆",u:"💡"};
+const LM={"Cuiabá":"🐆","Campo Grande":"🦜","Palmas":"🌅","Vitória":"⚓","Aracaju":"🦀","Natal":"🏖️","João Pessoa":"☀️","Maceió":"🐠","Teresina":"🌊","Goiânia":"🌾","Florianópolis":"🏄","Manaus":"🌳","Belém":"🥭","Fortaleza":"🏝️","Recife":"🌉","Curitiba":"🌲","Porto Alegre":"🧉","Salvador":"🥁","Belo Horizonte":"⛰️","Brasília":"🏛️","São Paulo":"🏙️","Rio de Janeiro":"🗽","Companhia de Luz":"💡","Companhia de Água":"💧","Carnaval":"🎭"};
+let S=null,W,retry=0,muted=false,name="",toast="",sel=null,EVK="";
+const ld=()=>{try{return JSON.parse(localStorage.room)}catch{return null}},sv=o=>{try{localStorage.room=JSON.stringify(o)}catch{}},cl=()=>{try{localStorage.removeItem("room")}catch{}};
+try{name=localStorage.nome||""}catch{}
+const slug=n=>n.normalize("NFD").replace(/[^a-z0-9]/gi,"").toLowerCase();
+const pos=i=>i<10?[11,11-i]:i<20?[11-(i-10),1]:i<30?[1,1+(i-20)]:[1+(i-30),11];
+
+/* ---------- conexão com reconexão automática ---------- */
+const send=o=>W&&W.readyState==1&&W.send(JSON.stringify(o));
+function conn(){
+  W=new WebSocket((location.protocol=="https:"?"wss://":"ws://")+location.host);
+  W.onopen=()=>{retry=0;const k=ld();if(k)send({t:"rejoin",room:k.room,id:k.id})};
+  W.onmessage=e=>{const m=JSON.parse(e.data);
+    if(m.t=="state"){if(!S||S.go!=m.go)toast="";S=m;const k=JSON.stringify(m.g&&m.g.ev);if(k!=EVK){EVK=k;sel=null}sv({room:m.room,id:m.you});if(LS)syncVoice();draw()}
+    else if(m.t=="sig")onSig(m.from,m.d);
+    else if(m.t=="gone"){cl();S=null;draw()}
+    else if(m.t=="err"){toast=m.m;draw()}};
+  W.onclose=()=>setTimeout(conn,Math.min(1000*2**retry++,8000));
+}
+const act=o=>{toast="";send({t:"act",...o})},st=()=>{toast="";send({t:"start"})};
+const mk=k=>send({t:"create",game:k,name:name||"Jogador"}),jn=()=>send({t:"join",room:$("#cd").value.trim(),name:name||"Jogador"});
+function leave(){cl();S=null;if(LS){LS.getTracks().forEach(t=>t.stop());LS=null;Object.keys(PCs).forEach(hang);send({t:"voice",on:false})}draw()}
+
+/* ---------- voz nativa (WebRTC, sem conta externa) ---------- */
+let LS=null,PCs={},ICE=[{urls:"stun:stun.l.google.com:19302"}],audios={};
+async function voice(){
+  if(LS){muted=!muted;micSync();draw();return}
+  try{
+    LS=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+    try{ICE=await(await fetch("/ice")).json()}catch{}
+    muted=false;send({t:"voice",on:true});
+    S.pl.forEach(q=>{if(q.v&&q.id!=S.you)call(q.id)});
+    micSync();draw();
+  }catch(e){LS=null;toast="Não consegui usar o microfone. Permita o acesso no navegador (o site precisa estar em HTTPS).";draw()}
+}
+function peer(id){
+  if(PCs[id])return PCs[id];
+  const pc=new RTCPeerConnection({iceServers:ICE});pc.q=[];PCs[id]=pc;
+  LS.getTracks().forEach(t=>pc.addTrack(t,LS));
+  pc.onicecandidate=e=>e.candidate&&send({t:"sig",to:id,d:{c:e.candidate}});
+  pc.ontrack=e=>{let a=audios[id];if(!a){a=audios[id]=document.createElement("audio");a.autoplay=true;a.playsInline=true;document.body.appendChild(a)}a.srcObject=e.streams[0]};
+  pc.onconnectionstatechange=()=>{if(pc.connectionState=="failed"){toast="A voz falhou com um jogador (rede restrita). O administrador pode configurar um servidor TURN (veja o LEIA-ME).";hang(id);draw()}};
+  return pc;
+}
+async function call(id){const pc=peer(id),o=await pc.createOffer();await pc.setLocalDescription(o);send({t:"sig",to:id,d:{s:pc.localDescription}})}
+async function onSig(from,d){
+  if(!LS)return;
+  const pc=peer(from);
+  if(d.s){
+    if(d.s.type=="offer"&&pc.signalingState!="stable"){if(S.you>from)return;await pc.setLocalDescription({type:"rollback"})}
+    await pc.setRemoteDescription(d.s);
+    pc.q.forEach(x=>pc.addIceCandidate(x).catch(()=>{}));pc.q=[];
+    if(d.s.type=="offer"){const a=await pc.createAnswer();await pc.setLocalDescription(a);send({t:"sig",to:from,d:{s:pc.localDescription}})}
+  }else if(d.c){pc.remoteDescription?pc.addIceCandidate(d.c).catch(()=>{}):pc.q.push(d.c)}
+}
+function hang(id){if(PCs[id]){PCs[id].close();delete PCs[id]}if(audios[id]){audios[id].remove();delete audios[id]}}
+function syncVoice(){Object.keys(PCs).forEach(id=>{const q=S.pl.find(x=>x.id==id);if(!q||!q.v)hang(id)})}
+function micSync(){
+  if(!LS)return;
+  const night=S&&S.game=="cidade"&&S.g&&(S.g.ph=="night"||!S.g.me.a);
+  LS.getAudioTracks().forEach(t=>t.enabled=!muted&&!night);
+}
+const voiceBar=()=>'<div class="vb"><button class="btn2" onclick="voice()">'+(LS?(muted?"🔇 Ativar microfone":"🎙️ Silenciar"):"🎙️ Entrar no chat de voz")+'</button> <span class="l">'+S.pl.filter(q=>q.v).length+" na voz</span></div>"+(toast?'<p class="dn">'+toast+"</p>":"");
+
+/* ---------- telas ---------- */
+function draw(){
+  document.body.className=S&&S.game=="cidade"&&S.g&&S.g.ph=="night"?"night":"";
+  A.innerHTML=!S?menu():!S.go?lobby():S.game=="metropole"?metro():cidade();
+  micSync();
+}
+const menu=()=>'<h1>Sala de Jogos</h1><p class="l">Jogue com os amigos, cada um no seu aparelho, com chat de voz.</p><input id="nm" placeholder="Seu nome" maxlength="14" value="'+name+'" oninput="name=this.value;try{localStorage.nome=name}catch{}">'
++'<div class="gs">'+Object.entries(GM).map(([k,g])=>'<div class="gc" style="--c:'+g.c+'"><div class="ga">'+g.e+"</div><h2>"+g.n+"</h2><p>"+g.d+'</p><p class="l">'+g.min+" a "+g.max+' jogadores</p><button class="btn" onclick="mk(\''+k+'\')">Criar sala</button></div>').join("")+'<div class="gc" style="--c:#999"><div class="ga">🎲</div><h2>Mais jogos em breve</h2><p class="l">Novos jogos aparecem aqui no menu.</p></div></div>'
++'<div><input id="cd" placeholder="Código da sala" maxlength="4" style="text-transform:uppercase;width:150px"><button class="btn" onclick="jn()">Entrar numa sala</button></div>'+(toast?'<p class="dn">'+toast+"</p>":"");
+function lobby(){
+  const g=GM[S.game],h=S.you==S.host;
+  return voiceBar()+"<h1>"+g.e+" "+g.n+'</h1><div class="code">'+S.room+'</div><p class="l">Passe este código aos amigos para entrarem na sala.</p><div class="sc">'
+  +S.pl.map(q=>'<span style="border-color:'+(q.on?"#1fa971":"#999")+'">'+q.name+(q.id==S.host?" 👑":"")+"</span>").join("")+"</div>"
+  +(h?'<button class="btn" onclick="st()"'+(S.pl.length<g.min?" disabled":"")+">Começar ("+S.pl.length+"/"+g.min+" mínimo)</button>":'<p class="l">Aguardando o anfitrião começar...</p>')
+  +'<div><button class="btn2" onclick="leave()">Sair</button></div>';
+}
+const BI={"Cuiabá":"selva","Campo Grande":"campo","Palmas":"campo","Vitória":"praia","Aracaju":"praia","Natal":"praia","João Pessoa":"praia","Maceió":"praia","Teresina":"campo","Goiânia":"campo","Florianópolis":"praia","Manaus":"selva","Belém":"selva","Fortaleza":"praia","Recife":"praia","Curitiba":"serra","Porto Alegre":"serra","Salvador":"praia","Belo Horizonte":"serra","Brasília":"cidade","São Paulo":"cidade","Rio de Janeiro":"serra"};
+const rc=(x,y,w,h,f,o)=>'<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" fill="'+f+'"'+(o?' opacity="'+o+'"':"")+"/>",ci=(x,y,r,f)=>'<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="'+f+'"/>',pa=(d,f,s)=>'<path d="'+d+'" fill="'+(f||"none")+'"'+(s?' stroke="'+s+'" stroke-width="1.4"':"")+"/>";
+function art(i,T,id){
+  id=id||"g";const t=T[i],k=t[1],h=i*37+11;let sky="#7ad0f0",g2="#ffe9b0",b="";
+  if(k=="p"){
+    const bi=BI[t[0]]||"cidade";
+    if(bi=="praia")b=ci(96,13,7,"#ffd23f")+rc(0,34,120,22,"#2aa6d9")+pa("M0 38q10-4 20 0t20 0 20 0 20 0 20 0 20 0","","#ffffffaa")+pa("M0 45q10-4 20 0t20 0 20 0 20 0 20 0 20 0","","#ffffff66")+rc(0,50,120,6,"#f3d9a0")+pa("M20 50q2-18 6-26","","#7a5230")+pa("M26 24q-10-4-14 4M26 24q-2-9-12-9M26 24q8-6 16 0M26 24q10 0 14 8","","#1a9a5b");
+    else if(bi=="selva"){sky="#a6e3b5";g2="#e8f7c8";b=ci(98,12,6,"#ffe27a")+rc(0,40,120,16,"#1f7a4d")+pa("M0 48q20-8 40 0t40 0 40 0V56H0Z","#6b4f26")+[8,28,52,76,100].map((x,j)=>rc(x+2,30+j%2*3,3,14,"#5b3a1a")+ci(x+3.5,28+j%2*3,9,j%2?"#2e9b57":"#237a45")).join("")}
+    else if(bi=="campo")b=ci(96,12,7,"#ffd23f")+pa("M0 36q30-14 60 0t60 0V56H0Z","#d9b441")+pa("M0 44q30-10 60 0t60 0V56H0Z","#b88a2a")+[10,26,42,58,74,90,106].map(x=>rc(x,48,1.5,6,"#7a5a1a")).join("")+rc(80,26,2,14,"#7a5230")+pa("M81 26l10-4M81 26l-10 4M81 26l-4-10M81 26l4 10","","#444");
+    else if(bi=="serra"){sky="#9ac7ee";g2="#e6f1fb";b=ci(98,12,6,"#fff3b0")+pa("M0 56L28 14l22 26 18-18 30 34Z","#5f7f9e")+pa("M28 14l-7 9 7-3 5 5Z","#fff")+pa("M0 56L18 36l16 20Z","#3e6b4f")+pa("M70 56l20-22 30 22Z","#3e6b4f")+(t[0]=="Rio de Janeiro"?rc(27,5,2,10,"#fff")+rc(23,8,10,1.6,"#fff"):"")}
+    else{sky="#ffb86b";g2="#ffe3b3";b=ci(98,12,7,"#fff3b0")+(t[0]=="Brasília"?pa("M10 56Q30 14 50 56","","#fff")+pa("M60 56Q80 14 100 56","","#fff")+rc(0,52,120,4,"#8aa0a8"):[0,1,2,3,4,5,6,7,8].map(j=>{const hh=16+(i*7+j*13)%30;return rc(j*13+2,56-hh,11,hh,"#2d3e50",.9)+rc(j*13+5,56-hh+3,2,2,"#ffd23f")+rc(j*13+8,56-hh+8,2,2,"#ffd23f")}).join(""))}
+  }else{
+    [sky,g2]={r:["#9ac7ee","#e6f1fb"],u:["#1b2152","#4b5bd6"],x:["#2f6f4f","#bfe3c8"],c:["#6b3fa0","#d8b8ff"],k:["#8a5a2b","#f0d09a"],j:["#555","#999"],g:["#2f6fed","#ff9a9a"],f:["#e0559c","#ffd23f"],s:["#ffc72c","#fff3b0"]}[k];
+    if(k=="r")b=rc(0,40,120,16,"#8d6a3a")+rc(0,44,120,2,"#444")+rc(0,50,120,2,"#444")+[0,1,2,3,4,5,6,7,8,9,10,11].map(j=>rc(j*10+2,42,4,12,"#5b3a1a")).join("");
+    else if(k=="u")b=ci(60,28,26,"#ffd23f")+ci(60,28,16,"#fff3b0");
+    else if(k=="x")b=pa("M10 24L60 6l50 18Z","#f5f5f5")+[0,1,2,3,4].map(j=>rc(18+j*20,26,8,22,"#fff")).join("")+rc(6,48,108,8,"#ddd");
+    else if(k=="k")b=rc(26,24,68,30,"#6b3f1a")+rc(26,24,68,9,"#8a5a2b")+rc(56,32,8,9,"#ffd23f")+ci(14,14,1.5,"#fff")+ci(106,12,1.5,"#fff");
+    else if(k=="c")b=[...Array(16)].map((_,j)=>ci((j*29+h)%120,(j*17+h)%50+3,1.4,"#fff")).join("");
+    else if(k=="j")b=[0,1,2,3,4,5,6,7,8].map(j=>rc(j*14+6,0,3,56,"#222")).join("");
+    else if(k=="f")b=[...Array(26)].map((_,j)=>ci((j*23+h)%120,(j*13+h)%56,2,["#fff","#ffd23f","#2f6fed","#1fa971"][j%4])).join("");
+    else if(k=="s")b=[...Array(40)].map((_,j)=>(j+(j/10|0))%2?rc(j%10*12,(j/10|0)*14,12,14,"#222",.8):"").join("");
+    else if(k=="g")b=rc(0,0,60,56,"#ff5d5d",.5)+rc(60,0,60,56,"#2f6fed",.5);
+  }
+  return '<svg viewBox="0 0 120 56" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="'+id+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+sky+'"/><stop offset="1" stop-color="'+g2+'"/></linearGradient></defs><rect width="120" height="56" fill="url(#'+id+')"/>'+b+(k=="p"?rc(0,0,120,5,G[t[3]]):"")+'<text x="60" y="40" font-size="26" text-anchor="middle">'+(LM[t[0]]||IC[k])+"</text></svg>";
+}
+function evHtml(ev,T){
+  if(!ev)return '<p class="l">Role os dados para jogar.</p>';
+  const t=T[ev.i];
+  return '<div class="ev"><div class="art">'+art(ev.i,T)+'<img src="img/'+slug(t[0])+'.jpg" alt="" onerror="this.remove()"><video src="img/'+slug(t[0])+'.mp4" autoplay muted loop playsinline onerror="this.remove()"></video></div><h2>'+ev.ti+"</h2><p>"+ev.tx+"</p>"
+  +(ev.d?'<div class="dl '+(ev.d>0?"up":"dn")+'">'+(ev.d>0?"+":"−")+"R$"+Math.abs(ev.d)+"</div>":"")+"</div>";
+}
+const btn=(l,a)=>'<button class="btn" onclick="act({a:\''+a+'\'})">'+l+"</button>";
+function tcard(g){
+  const i=sel,t=g.T[i],o=g.own[i],my=g.me==g.cur&&g.p[g.cur].a&&g.ph!="win",ow=o>=0&&o==g.me,hc=Math.round((t[2]||0)/20)*10,own=["p","r","u"].includes(t[1]);
+  const sp={s:"Quem passa pela Largada recebe R$200.",c:"Aqui você pega uma carta de Sorte.",x:"Quem para aqui paga R$"+t[2]+" de imposto.",j:"Só visitando: nada acontece. Quem está preso sai pagando R$50, usando uma carta ou tirando dupla.",f:"Carnaval: quem para aqui leva o prêmio acumulado de impostos e multas.",k:"Aqui você pega uma carta do Cofre da Cidade.",g:"Quem para aqui vai direto para a cadeia."};
+  let tx=own?"Preço R$"+t[2]+(o>=0?". Dono: "+g.p[o].n+(g.mort[i]?" (hipotecada)":"")+(g.h[i]?". Tem "+(g.h[i]==5?"um hotel":g.h[i]+" casa(s)"):""):". Sem dono ainda."):sp[t[1]];
+  if(t[1]=="p")tx+=" Aluguel base R$"+t[2]/10+", maior com todas as cidades da cor e com casas.";
+  if(t[1]=="r")tx+=" Aluguel R$25, dobrando a cada ferrovia do dono.";
+  if(t[1]=="u")tx+=" Aluguel de 4 vezes os dados (10 vezes com as duas companhias).";
+  const B=(l,a)=>'<button class="btn" onclick="act({a:\''+a+"',i:"+i+'});sel=null">'+l+"</button>";
+  let bt="";
+  if(ow&&my&&own){
+    if(t[1]=="p"&&!g.mort[i])bt+=B("Construir R$"+hc,"build")+(g.h[i]?B("Vender casa +R$"+hc/2,"sell"):"");
+    bt+=g.mort[i]?B("Resgatar −R$"+Math.round(t[2]/2*1.1),"unmort"):B("Hipotecar +R$"+t[2]/2,"mort");
+  }
+  return '<div class="ev"><div class="art">'+art(i,g.T)+"</div><h2>"+t[0]+"</h2><p>"+tx+"</p><div>"+bt+'<button class="btn2" onclick="sel=null;draw()">Fechar</button></div></div>';
+}
+function metro(){
+  const g=S.g,T=g.T,cur=g.p[g.cur],mine=g.me==g.cur&&cur.a,f="⚀⚁⚂⚃⚄⚅";
+  let b="";
+  T.forEach((t,i)=>{const[r,c]=pos(i);
+    b+='<div class="t'+(cur.pos==i?" on":"")+'" style="grid-area:'+r+" / "+c+(g.own[i]>=0?";box-shadow:inset 0 -5px 0 "+PC[g.own[i]]:"")+'" onclick="sel='+i+';draw()">'
+    +'<span class="ti">'+art(i,T,"t"+i)+'</span><span class="nm">'+t[0]+(t[2]?"<br>R$"+t[2]:"")+"</span>"
+    +(g.mort[i]?"<em>🔒</em>":g.h[i]?"<em>"+(g.h[i]==5?"🏨":"🏠".repeat(g.h[i]))+"</em>":"")+'<div class="k">'+g.p.filter(q=>q.a&&q.pos==i).map(q=>PE[q.i]).join("")+"</div></div>"});
+  const a1=g.ph=="win"?btn("Voltar ao menu","x").replace("act({a:'x'})","leave()"):!mine?'<span class="l">Vez de '+cur.n+"...</span>":g.ph=="roll"?(cur.jail?btn("Tentar dupla","roll")+btn("Pagar R$50","pay")+(cur.card?btn("Usar carta","card"):""):btn("Rolar dados","roll")):g.ph=="buy"?'<button class="btn" onclick="act({a:\'buy\'})"'+(cur.m<T[cur.pos][2]?" disabled":"")+">Comprar por R$"+T[cur.pos][2]+"</button>"+btn("Passar","skip"):btn("Próximo jogador","next");
+  const head=(g.ph=="win"?"<h2>🏆 "+g.p.find(q=>q.a).n+" venceu!</h2>":"<div>"+PE[cur.i]+" <b>"+cur.n+"</b> · R$"+cur.m+(cur.jail?" 🔒 preso":"")+"</div>")+'<div class="sc"><span style="border-color:#e0559c">🎭 Carnaval R$'+g.pot+"</span>"+(g.news?'<span style="border-color:'+(g.news.t=="boom"?"#1a9a5b":"#e03a3a")+'">📰 '+(g.news.t=="boom"?"aluguel em dobro":"aluguel pela metade")+" · cor "+g.news.c+"</span>":"")+"</div>";
+  return voiceBar()+'<div id="board">'+b+'<div id="mid">'+head+'<div class="d">'+f[g.dice[0]-1]+" "+f[g.dice[1]-1]+"</div>"+(sel!=null?tcard(g):evHtml(g.ev,T))+"<div>"+a1+'</div><div class="sc">'
+  +g.p.map(q=>'<span class="'+(q.a?"":"out")+'" style="border-color:'+PC[q.i]+'">'+PE[q.i]+" "+q.n+" R$"+q.m+(q.jail?" 🔒":"")+(q.card?" 🎫"+q.card:"")+"</span>").join("")+"</div></div></div>"
+  +'<p class="l">Toque em qualquer casa para ver os detalhes. Na sua vez, nas suas propriedades, dá para construir, vender casas e hipotecar.</p>';
+}
+const scene=n=>'<svg viewBox="0 0 120 36" style="width:min(100%,280px);border-radius:12px;border:2px solid var(--line)"><rect width="120" height="36" fill="'+(n?"#1b2152":"#7ad0f0")+'"/>'+(n?'<circle cx="98" cy="9" r="6" fill="#f6f1c8"/><circle cx="20" cy="8" r=".9" fill="#fff"/><circle cx="48" cy="14" r=".9" fill="#fff"/><circle cx="70" cy="6" r=".9" fill="#fff"/>':'<circle cx="98" cy="9" r="6" fill="#ffd23f"/>')+[0,1,2,3,4,5,6,7].map(i=>{const h=12+(i*7)%12;return'<rect x="'+(i*15+2)+'" y="'+(36-h)+'" width="12" height="'+h+'" fill="'+(n?"#0a0f24":"#3b5b6b")+'"/>'+(n?'<rect x="'+(i*15+6)+'" y="'+(36-h+3)+'" width="3" height="3" fill="#ffd23f"/>':"")}).join("")+"</svg>";
+const ROLES={assassino:["🔪","Assassino","Mate um inocente por noite sem ser descoberto."],detetive:["🕵️","Detetive","Investigue uma pessoa por noite."],"médico":["🩺","Médico","Proteja uma pessoa por noite."],"cidadão":["🏠","Cidadão","Descubra os assassinos e vote para expulsá-los."]};
+const pick=(l,a)=>l.map(q=>'<button class="btn" onclick="act({a:\''+a+"',t:'"+q.id+'\'})">'+q.n+"</button>").join(" ");
+function cidade(){
+  const g=S.g,me=g.me,h=S.you==S.host,r=ROLES[me.r],al=g.p.filter(q=>q.a);let body="";
+  if(g.ph=="end")body="<h2>"+g.win+" venceram!</h2>"+g.p.map(q=>"<div>"+ROLES[q.r][0]+" "+q.n+" — "+ROLES[q.r][1]+(q.a?"":" (fora)")+"</div>").join("")+'<button class="btn" onclick="leave()">Voltar ao menu</button>';
+  else if(!me.a)body="<p>Você está fora do jogo, mas pode assistir. Não revele nada!</p>";
+  else if(g.ph=="night")body=me.r=="cidadão"||g.acted?"<p>Você dorme... aguarde os outros.</p>":"<p>Quem você escolhe?</p>"+pick(al.filter(q=>q.id!=me.id&&!(me.r=="assassino"&&q.r=="assassino")),"night");
+  else body=g.voted?"<p>Voto registrado. Aguarde os outros ("+g.nv+"/"+al.length+").</p>":"<p>Em quem você vota para expulsar?</p>"+pick(al.filter(q=>q.id!=me.id),"vote");
+  return voiceBar()+scene(g.ph=="night")+"<h1>"+(g.ph=="night"?"🌙 Noite ":"☀️ Dia ")+g.day+'</h1><div class="ev"><div class="ga">'+r[0]+"</div><h2>Você é "+r[1]+"</h2><p>"+r[2]+"</p></div>"
+  +(g.ev?"<h2>"+g.ev.ti+"</h2><p>"+g.ev.tx+"</p>":"")+(g.res?"<p>🔎 "+g.res+"</p>":"")+"<div>"+body+"</div>"
+  +'<div class="sc">'+g.p.map(q=>'<span class="'+(q.a?"":"out")+'">'+q.n+(q.r&&g.ph!="end"&&q.id!=me.id?" 🔪":"")+"</span>").join("")+"</div>"
+  +(h&&g.ph!="end"?'<button class="btn2" onclick="act({a:\'force\'})">Encerrar etapa agora</button>':"");
+}
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+conn();draw();
+</script></body></html>

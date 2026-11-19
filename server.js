@@ -11,101 +11,54 @@ app.get("/ice",(q,r)=>{
 const R={},rnd=n=>Math.random()*n|0,uid=()=>Math.random().toString(36).slice(2,10);
 
 /* ================= METRÓPOLE ================= */
-const T=[["Largada","s"],["Cuiabá","p",60,0],["Sorte","c"],["Sorte","c"],["Imposto","x",200],["Ferrovia Norte","r",200],["Palmas","p",100,1],["Sorte","c"],["Sorte","c"],["Aracaju","p",120,1],["Cadeia","j"],["Natal","p",140,2],["Companhia de Luz","u",150],["Sorte","c"],["Maceió","p",160,2],["Ferrovia Leste","r",200],["Teresina","p",180,3],["Sorte","c"],["Sorte","c"],["Florianópolis","p",200,3],["Parque","f"],["Manaus","p",220,4],["Sorte","c"],["Belém","p",220,4],["Fortaleza","p",240,4],["Ferrovia Sul","r",200],["Recife","p",260,5],["Curitiba","p",260,5],["Companhia de Água","u",150],["Porto Alegre","p",280,5],["Vá preso","g"],["Salvador","p",300,6],["Belo Horizonte","p",300,6],["Sorte","c"],["Brasília","p",320,6],["Ferrovia Oeste","r",200],["Sorte","c"],["São Paulo","p",350,7],["Imposto","x",100],["Rio de Janeiro","p",400,7]];
-const MULT=[1,2,4,8,13,20,30];
+const T=[["Largada","s"],["Cuiabá","p",60,0],["Sorte","c"],["Campo Grande","p",60,0],["Imposto","x",200],["Ferrovia Norte","r",200],["Palmas","p",100,1],["Cofre","k"],["Vitória","p",100,1],["Aracaju","p",120,1],["Cadeia","j"],["Natal","p",140,2],["Companhia de Luz","u",150],["João Pessoa","p",140,2],["Maceió","p",160,2],["Ferrovia Leste","r",200],["Teresina","p",180,3],["Sorte","c"],["Goiânia","p",180,3],["Florianópolis","p",200,3],["Carnaval","f"],["Manaus","p",220,4],["Cofre","k"],["Belém","p",220,4],["Fortaleza","p",240,4],["Ferrovia Sul","r",200],["Recife","p",260,5],["Curitiba","p",260,5],["Companhia de Água","u",150],["Porto Alegre","p",280,5],["Vá preso","g"],["Salvador","p",300,6],["Belo Horizonte","p",300,6],["Cofre","k"],["Brasília","p",320,6],["Ferrovia Oeste","r",200],["Sorte","c"],["São Paulo","p",350,7],["Imposto","x",100],["Rio de Janeiro","p",400,7]];
+const MULT=[1,2,4,8,13,20,30],GN=["marrom","azul-claro","rosa","laranja","vermelha","azul","verde","roxa"];
 const full=(s,i)=>T.every((u,j)=>u[3]!==T[i][3]||s.own[j]===s.own[i]);
 const rent=(s,i,n)=>{
-  const t=T[i],o=s.own[i];
+  const t=T[i],o=s.own[i];let r;
   if(s.mort[i])return 0;
-  if(t[1]=="r")return 25*2**(T.filter((u,j)=>u[1]=="r"&&s.own[j]==o).length-1);
-  if(t[1]=="u")return n*(T.filter((u,j)=>u[1]=="u"&&s.own[j]==o).length>1?10:4);
-  const h=s.h[i];return t[2]/10*MULT[h?h+1:full(s,i)?1:0];
+  if(t[1]=="r")r=25*2**(T.filter((u,j)=>u[1]=="r"&&s.own[j]==o).length-1);
+  else if(t[1]=="u")r=n*(T.filter((u,j)=>u[1]=="u"&&s.own[j]==o).length>1?10:4);
+  else{const h=s.h[i];r=t[2]/10*MULT[h?h+1:full(s,i)?1:0]}
+  if(s.news&&t[3]===s.news.g)r=Math.round(r*(s.news.t=="boom"?2:.5));
+  return r;
 };
-// Amuleto bloqueia uma penalidade financeira inteira e é consumido ao proteger.
-const hit=(p,value)=>{
-  value=Math.max(0,Math.round(value||0));
-  if(!value)return 0;
-  if(p.shield>0){p.shield--;return 0;}
-  p.m-=value;return value;
-};
-const transfer=(from,to,value)=>{const paid=hit(from,value);to.m+=paid;return paid};
-const CARDS=[
-  {title:"BAÚ DE OURO",art:"treasure",run:(s,p)=>{p.m+=300;return "O baú estava lotado! Você recebeu R$300."}},
-  {title:"TREVO DA SORTE",art:"clover",run:(s,p)=>{p.m+=150;p.shield=Math.min(2,(p.shield||0)+1);return "Você ganhou R$150 e um amuleto que bloqueia uma penalidade."}},
-  {title:"DADO SOMBRIO",art:"dark-dice",run:(s,p)=>{const n=hit(p,120);return n?"O dado virou contra você: perdeu R$120.":"Seu amuleto anulou o azar!"}},
-  {title:"RODA PREMIADA",art:"wheel",run:(s,p)=>{const n=50+rnd(6)*50;p.m+=n;return "A roda parou no prêmio de R$"+n+"!"}},
-  {title:"ESCUDO MÁGICO",art:"shield",run:(s,p)=>{p.shield=Math.min(2,(p.shield||0)+1);p.m+=75;return "Você ganhou R$75 e recebeu um amuleto de proteção."}},
-  {title:"COFRE REAL",art:"coins",run:(s,p)=>{const n=Math.max(100,s.own.filter(o=>o==p.i).length*100);p.m+=n;return "O banco pagou R$"+n+" de bônus pelas suas propriedades."}},
-  {title:"CAIXA MISTERIOSA",art:"mystery",run:(s,p)=>{if(rnd(2)){p.m+=250;return "Surpresa boa! Havia R$250 dentro da caixa."}const n=hit(p,100);return n?"A caixa tinha uma pegadinha: você perdeu R$100.":"Seu amuleto bloqueou a pegadinha!"}},
-  {title:"GATO PRETO",art:"blackcat",run:(s,p)=>{const n=hit(p,160);p.pos=(p.pos+39)%40;return (n?"O azar bateu: −R$160. ":"Seu amuleto bloqueou a perda. ")+"Você ainda voltou uma casa."}},
-  {title:"TEMPESTADE",art:"storm",run:(s,p)=>{let total=0;s.p.forEach(q=>{if(q.a)total+=hit(q,40)});return total?"A tempestade atingiu a cidade: os jogadores perderam R$40 cada (R$"+total+" no total).":"Os amuletos protegeram todo mundo da tempestade!"}},
-  {title:"FESTA NA CIDADE",art:"wheel",run:(s,p)=>{s.p.forEach(q=>{if(q.a)q.m+=60});return "Todo jogador ativo recebeu R$60 do banco. Festa para todos!"}},
-  {title:"ATALHO",art:"clover",run:(s,p)=>{p.pos=(p.pos+38)%40;return "Você encontrou um atalho e avançou duas casas sem pagar nada."}},
-  {title:"TROCA DE LUGARES",art:"mystery",run:(s,p)=>{const a=s.p.filter(q=>q.a&&q!=p);if(!a.length)return "Não havia ninguém para trocar de lugar.";const q=a[rnd(a.length)],[x,y]=[p.pos,q.pos];p.pos=y;q.pos=x;return "Você trocou de lugar com "+q.n+"!"}},
-  {title:"CASHBACK",art:"coins",run:(s,p)=>{const n=Math.max(45,s.own.filter(o=>o==p.i).length*45);p.m+=n;return "Você recebeu R$"+n+" de retorno do banco."}},
-  {title:"IMPOSTO SURPRESA",art:"dark-dice",run:(s,p)=>{const n=hit(p,Math.max(50,s.own.filter(o=>o==p.i).length*25));return n?"Taxa surpresa: −R$"+n+".":"Seu amuleto anulou o imposto surpresa!"}},
-  {title:"ANIVERSÁRIO",art:"treasure",run:(s,p)=>{let n=0;s.p.forEach(q=>{if(q.a&&q!=p)n+=transfer(q,p,30)});return n?"Seus amigos contribuíram com R$"+n+" para o seu presente.":"Você ganhou parabéns, mas nenhum dinheiro foi transferido."}},
-  {title:"SORTEIO DA MESA",art:"coins",run:(s,p)=>{const a=s.p.filter(q=>q.a);const q=a[rnd(a.length)];q.m+=200;return q==p?"Você foi sorteado e ganhou R$200!":q.n+" foi sorteado e ganhou R$200!"}},
-  {title:"REPAROS",art:"storm",run:(s,p)=>{const houses=s.h.reduce((a,h,i)=>a+(s.own[i]==p.i?h:0),0),n=hit(p,Math.max(50,houses*40));return n?"Reparos na cidade: você pagou R$"+n+".":"Seu amuleto cobriu os reparos!"}},
-  {title:"DEPÓSITO ERRADO",art:"treasure",run:(s,p)=>{p.m+=180;return "O banco depositou R$180 por engano. Melhor não avisar!"}},
-  {title:"MÃO AMIGA",art:"clover",run:(s,p)=>{const n=p.m<400?250:80;p.m+=n;return "O banco ajudou você com R$"+n+"."}},
-  {title:"AMULETO EXTRA",art:"shield",run:(s,p)=>{p.shield=Math.min(2,(p.shield||0)+1);return "Você ganhou um amuleto. Ele bloqueia a próxima penalidade financeira."}},
-  {title:"PRÊMIO DO CONCURSO",art:"wheel",run:(s,p)=>{p.m+=200;return "Parabéns! O concurso pagou R$200."}},
-  {title:"MULTA DE TRÂNSITO",art:"storm",run:(s,p)=>{const n=hit(p,100);return n?"Multa inesperada: −R$100.":"Seu amuleto cancelou a multa!"}},
-  {title:"CHUVA DE MOEDAS",art:"coins",run:(s,p)=>{s.p.forEach(q=>{if(q.a)q.m+=40});return "Choveu dinheiro! Todos receberam R$40."}},
-  {title:"TAXA COLETIVA",art:"dark-dice",run:(s,p)=>{let n=0;s.p.forEach(q=>{if(q.a&&q!=p)n+=transfer(q,p,40)});return n?"Você recebeu R$"+n+" de uma taxa coletiva.":"Ninguém tinha taxa para pagar."}},
-  {title:"LOTERIA DA CIDADE",art:"wheel",run:(s,p)=>{const n=100+rnd(7)*100;p.m+=n;return "Seu bilhete foi sorteado! Prêmio de R$"+n+"."}},
-  {title:"CONTA DE LUZ",art:"storm",run:(s,p)=>{const n=hit(p,80);return n?"A conta de luz chegou: −R$80.":"Seu amuleto cobriu a conta de luz."}},
-  {title:"FEIRA DE TROCAS",art:"mystery",run:(s,p)=>{const a=s.p.filter(q=>q.a&&q!=p);if(!a.length)return "A feira foi cancelada: você está sozinho.";const q=a[rnd(a.length)],v=Math.min(120,Math.max(0,q.m));q.m-=v;p.m+=v;return q.n+" fez uma troca com você. Você recebeu R$"+v+"."}},
-  {title:"PATROCÍNIO",art:"coins",run:(s,p)=>{const n=150+(s.own.filter(o=>o==p.i).length*35);p.m+=n;return "Uma marca patrocinou seu império: +R$"+n+"."}},
-  {title:"GREVE GERAL",art:"storm",run:(s,p)=>{const n=hit(p,130);return n?"A cidade parou e você perdeu R$130.":"Seu amuleto protegeu seu caixa da greve."}},
-  {title:"ACHADO E PERDIDO",art:"treasure",run:(s,p)=>{p.m+=90;return "Você encontrou uma carteira esquecida: +R$90."}},
-  {title:"DOAÇÃO SOLIDÁRIA",art:"clover",run:(s,p)=>{let n=0;s.p.forEach(q=>{if(q.a&&q!=p)n+=transfer(q,p,25)});return n?"Cada rival contribuiu com R$25. Você recebeu R$"+n+".":"Não havia outros jogadores ativos."}},
-  {title:"DIA DE azar",art:"blackcat",run:(s,p)=>{const n=hit(p,Math.max(60,Math.round(p.m*0.08)));return n?"Um imprevisto levou R$"+n+" do seu caixa.":"O amuleto anulou o imprevisto."}},
-  {title:"BÔNUS DE PASSAGEM",art:"clover",run:(s,p)=>{p.m+=200;return "O banco antecipou seu bônus de passagem: +R$200."}},
-  {title:"PASSEIO TURÍSTICO",art:"wheel",run:(s,p)=>{p.pos=(p.pos+5)%40;return "Você fez um passeio e avançou cinco casas!"}},
-  {title:"RETROCESSO",art:"dark-dice",run:(s,p)=>{p.pos=(p.pos+35)%40;return "Uma rua interditada fez você voltar cinco casas."}},
-  {title:"MULTA POR BARULHO",art:"storm",run:(s,p)=>{const n=hit(p,70);return n?"Festa fora de hora: multa de R$70.":"Seu amuleto cancelou a multa."}},
-  {title:"INVESTIMENTO CERTO",art:"coins",run:(s,p)=>{const n=100+rnd(5)*75;p.m+=n;return "Seu investimento rendeu R$"+n+"."}},
-  {title:"INVESTIMENTO RUIM",art:"dark-dice",run:(s,p)=>{const n=hit(p,100+rnd(4)*50);return n?"O investimento deu prejuízo: −R$"+n+".":"Seu amuleto impediu o prejuízo."}},
-  {title:"PRESENTE DO RIVAL",art:"treasure",run:(s,p)=>{const a=s.p.filter(q=>q.a&&q!=p);if(!a.length){p.m+=100;return "Sem rivais, o banco deu R$100.";}const q=a.reduce((x,y)=>x.m<y.m?x:y);const n=transfer(q,p,Math.min(100,Math.max(0,q.m)));return q.n+" pagou R$"+n+" para você."}},
-  {title:"FESTIVAL DE RUA",art:"wheel",run:(s,p)=>{s.p.forEach(q=>{if(q.a)q.m+=90});return "Festival na cidade! Todo mundo ganhou R$90."}},
-  {title:"APAGÃO",art:"storm",run:(s,p)=>{let n=0;s.p.forEach(q=>{if(q.a)n+=hit(q,35)});return "Apagão geral: os jogadores perderam até R$35 cada. Total recolhido: R$"+n+"."}},
-  {title:"SEGURO PREMIADO",art:"shield",run:(s,p)=>{p.shield=Math.min(3,(p.shield||0)+2);return "A seguradora deu dois amuletos! Você pode bloquear duas penalidades."}},
-  {title:"DEVOLUÇÃO DE IMPOSTO",art:"coins",run:(s,p)=>{const n=100+rnd(4)*50;p.m+=n;return "O governo devolveu R$"+n+" de imposto."}},
-  {title:"OBRA NA SUA RUA",art:"storm",run:(s,p)=>{const n=hit(p,Math.max(50,s.own.filter(o=>o==p.i).length*30));return n?"Obra e barulho: você pagou R$"+n+".":"Seu amuleto cobriu os custos da obra."}},
-  {title:"VAQUINHA",art:"clover",run:(s,p)=>{let n=0;s.p.forEach(q=>{if(q.a&&q!=p)n+=transfer(q,p,50)});return n?"A vaquinha dos amigos rendeu R$"+n+".":"A vaquinha não teve participantes."}},
-  {title:"CIDADE EM PROMOÇÃO",art:"treasure",run:(s,p)=>{p.m+=120;return "Comércio em promoção! Você economizou R$120 e recebeu o valor."}},
-  {title:"PANE NO CARRO",art:"storm",run:(s,p)=>{const n=hit(p,110);return n?"Seu carro quebrou: conserto de R$110.":"Seu amuleto pagou o conserto."}},
-  {title:"SORTE GRANDE",art:"wheel",run:(s,p)=>{const n=300+rnd(4)*100;p.m+=n;return "Jackpot! Você ganhou R$"+n+"."}},
-  {title:"AZAR COMPARTILHADO",art:"blackcat",run:(s,p)=>{const a=s.p.filter(q=>q.a);let n=0;a.forEach(q=>n+=hit(q,50));return "Todo jogador ativo teve um gasto inesperado de R$50. Total: R$"+n+"."}},
-  {title:"PASSE LIVRE",art:"shield",run:(s,p)=>{p.shield=Math.min(3,(p.shield||0)+1);p.m+=50;return "Você recebeu R$50 e um passe que bloqueia uma penalidade."}},
-  {title:"CONTRATO RELÂMPAGO",art:"coins",run:(s,p)=>{const n=Math.max(80,s.own.filter(o=>o==p.i).length*60);p.m+=n;return "Um contrato foi fechado! Você recebeu R$"+n+"."}},
-  {title:"VIZINHO GENEROSO",art:"clover",run:(s,p)=>{const a=s.p.filter(q=>q.a&&q!=p);if(!a.length){p.m+=75;return "O banco substituiu o vizinho e deu R$75.";}const q=a[rnd(a.length)];const n=transfer(q,p,75);return q.n+" dividiu R$"+n+" com você."}},
-  {title:"PONTE INTERDITADA",art:"dark-dice",run:(s,p)=>{p.pos=(p.pos+37)%40;return "Ponte interditada! Você voltou três casas."}},
-  {title:"DIA DE PAGAMENTO",art:"coins",run:(s,p)=>{p.m+=250;return "Salário caiu na conta: +R$250."}},
-  {title:"DOAÇÃO AO PARQUE",art:"storm",run:(s,p)=>{const n=hit(p,60);return n?"Você ajudou a cidade e doou R$60.":"Seu amuleto cobriu a doação."}},
-  {title:"BOLSA EM ALTA",art:"wheel",run:(s,p)=>{const n=150+rnd(5)*50;p.m+=n;return "A bolsa subiu! Seu bônus foi de R$"+n+"."}},
-  {title:"BOLSA EM QUEDA",art:"dark-dice",run:(s,p)=>{const n=hit(p,150);return n?"A bolsa caiu: prejuízo de R$150.":"Seu amuleto protegeu seu investimento."}},
-  {title:"PRESENTE PARA TODOS",art:"treasure",run:(s,p)=>{s.p.forEach(q=>{if(q.a)q.m+=40});return "A prefeitura distribuiu R$40 para cada jogador."}},
-  {title:"REVIRAVOLTA",art:"mystery",run:(s,p)=>{const a=s.p.filter(q=>q.a);if(a.length<2)return "Não há jogadores suficientes para a reviravolta.";const rich=a.reduce((x,y)=>x.m>y.m?x:y),poor=a.reduce((x,y)=>x.m<y.m?x:y);const n=Math.min(120,Math.max(0,rich.m));rich.m-=n;poor.m+=n;return "O líder ajudou quem estava atrás: R$"+n+" foram transferidos."}},
-  {title:"BONUS POR PROPRIEDADES",art:"coins",run:(s,p)=>{const n=s.own.filter(o=>o==p.i).length*45;p.m+=n;return "O banco pagou R$"+n+" pelo seu patrimônio."}},
-  {title:"DIA DE AZAR NO TRÂNSITO",art:"storm",run:(s,p)=>{const n=hit(p,90);p.pos=(p.pos+1)%40;return (n?"Você pagou R$90. ":"Seu amuleto anulou a multa. ")+"O trânsito ainda fez você avançar uma casa."}},
-  {title:"PERDEU A VEZ",art:"blackout",run:(s,p)=>{p.j=1;return "O pneu furou! Você perde sua próxima rodada para consertar."}},
-  {title:"FUGA DA CADEIA",art:"rail-tunnel",run:(s,p)=>{p.j=0;p.pos=(p.pos+1)%40;return "Você ganhou um passe livre e escapou de qualquer prisão. Avance uma casa!"}},
-  {title:"DIRETO PARA A CADEIA",art:"blackout",run:(s,p)=>{p.pos=10;p.j=1;return "A polícia confundiu seus documentos. Vá para a cadeia e perca uma rodada."}},
-  {title:"LEILÃO RELÂMPAGO",art:"prize-wheel",run:(s,p)=>{const a=T.map((t,i)=>({t,i})).filter(x=>["p","r","u"].includes(x.t[1])&&s.own[x.i]<0);if(!a.length)return "Não há propriedades livres para leiloar.";const x=a[rnd(a.length)],price=Math.max(40,Math.round(x.t[2]*0.65));if(p.m<price)return "O leilão terminou, mas você não tinha R$"+price+" para dar o lance vencedor.";p.m-=price;s.own[x.i]=p.i;return "Você venceu o leilão de "+x.t[0]+" por R$"+price+"!"}},
-  {title:"COBRANÇA DOS PROPRIETÁRIOS",art:"money-rain",run:(s,p)=>{let n=0;s.p.filter(q=>q.a&&q!=p).forEach(q=>{const owned=s.own.filter(o=>o==q.i).length;if(owned)n+=transfer(q,p,Math.min(90,owned*30));});return n?"Você recebeu R$"+n+" de uma cobrança extraordinária aos rivais com propriedades.":"Nenhum rival tinha propriedades para contribuir."}},
-  {title:"OBRA PREMIADA",art:"gold-shield",run:(s,p)=>{const a=s.own.map((o,i)=>o==p.i&&T[i][1]=="p"&&s.h[i]<5?i:-1).filter(i=>i>=0);if(!a.length)return "Você não tinha cidade disponível para receber uma melhoria.";const i=a[rnd(a.length)];s.h[i]++;return "A prefeitura construiu uma melhoria grátis em "+T[i][0]+"!"}},
-  {title:"CHUVA DE DINHEIRO",art:"money-rain",run:(s,p)=>{p.m+=500;return "Uma mala caiu do céu! Você ganhou R$500."}},
-  {title:"NOITE DE FESTA",art:"city-festival",run:(s,p)=>{s.p.forEach(q=>{if(q.a)q.m+=120});return "A cidade inteira comemorou: todos receberam R$120."}},
-  {title:"CARRO QUEBRADO",art:"broken-car",run:(s,p)=>{const n=hit(p,180);return n?"Seu carro quebrou no pior momento: −R$180.":"Seu amuleto cobriu o conserto do carro."}},
-  {title:"MERCADO EM PÂNICO",art:"market-crash",run:(s,p)=>{const n=hit(p,220);return n?"O mercado despencou e você perdeu R$220.":"Seu amuleto salvou seus investimentos."}},
-  {title:"TÚNEL SECRETO",art:"rail-tunnel",run:(s,p)=>{p.pos=(p.pos+10)%40;return "Você encontrou um túnel secreto e avançou dez casas!"}},
-  {title:"PRESENTE DO PREFEITO",art:"rival-gift",run:(s,p)=>{p.m+=180;p.shield=Math.min(3,(p.shield||0)+1);return "O prefeito gostou de você: +R$180 e um amuleto."}}
+const adv=(p,to)=>{if(to<p.pos)p.m+=200;p.pos=to};
+const bank=(s,p,a)=>{p.m-=a;s.pot+=a};
+const jail=p=>{p.pos=10;p.jail=1;p.jt=0};
+const others=(s,p)=>s.p.filter(q=>q!=p&&q.a);
+const reform=(s,p,c,h)=>{let a=0;s.h.forEach((x,i)=>{if(s.own[i]==p.i)a+=x==5?h:x*c});bank(s,p,a)};
+const CHANCE=[
+  ["Avance até a Largada e receba R$200.",(s,p)=>adv(p,0)],
+  ["Viaje até Salvador. Se passar pela Largada, receba R$200.",(s,p)=>adv(p,31)],
+  ["Siga até o Rio de Janeiro. Se passar pela Largada, receba R$200.",(s,p)=>adv(p,39)],
+  ["Avance até o Carnaval e leve o prêmio acumulado!",(s,p)=>adv(p,20)],
+  ["Siga até a ferrovia mais próxima. Se tiver dono, você paga o dobro do aluguel.",(s,p)=>{adv(p,[5,15,25,35].find(x=>x>p.pos)||5);s.dbl=1}],
+  ["Volte 3 casas.",(s,p)=>{p.pos=(p.pos+37)%40}],
+  ["Vá direto para a cadeia, sem passar pela Largada.",(s,p)=>jail(p)],
+  ["Saída livre da cadeia! Guarde esta carta para usar quando precisar.",(s,p)=>{p.card++}],
+  ["Multa por excesso de velocidade: pague R$80 (vai para o prêmio do Carnaval).",(s,p)=>bank(s,p,80)],
+  ["Seu time foi campeão! Receba R$150.",(s,p)=>{p.m+=150}],
+  ["Prêmio da loteria: receba R$200.",(s,p)=>{p.m+=200}],
+  ["Reforma geral: pague R$25 por casa e R$100 por hotel que você tem.",(s,p)=>reform(s,p,25,100)],
+  ["Você virou síndico: pague R$50 a cada jogador.",(s,p)=>others(s,p).forEach(q=>{q.m+=50;p.m-=50})],
+  ["Conta de luz atrasada: pague R$60 (vai para o prêmio do Carnaval).",(s,p)=>bank(s,p,60)]
 ];
-function drawChests(){const a=CARDS.map((_,i)=>i);for(let i=a.length-1;i>0;i--){const j=rnd(i+1);[a[i],a[j]]=[a[j],a[i]]}return a.slice(0,3)}
-function openChest(s,p,index){const c=CARDS[index],before=p.m,tx=c.run(s,p);return{i:p.pos,ti:c.title,tx,d:p.m-before,art:c.art}}
+const CHEST=[
+  ["Erro do banco a seu favor: receba R$200.",(s,p)=>{p.m+=200}],
+  ["Restituição do imposto: receba R$100.",(s,p)=>{p.m+=100}],
+  ["Herança de um tio distante: receba R$250.",(s,p)=>{p.m+=250}],
+  ["Consulta médica: pague R$50 (vai para o prêmio do Carnaval).",(s,p)=>bank(s,p,50)],
+  ["Mensalidade da escola: pague R$100 (vai para o prêmio do Carnaval).",(s,p)=>bank(s,p,100)],
+  ["Você vendeu um bem usado: receba R$120.",(s,p)=>{p.m+=120}],
+  ["Seu aniversário! Cada jogador paga R$30 a você.",(s,p)=>others(s,p).forEach(q=>{q.m-=30;p.m+=30})],
+  ["Saída livre da cadeia! Guarde esta carta para usar quando precisar.",(s,p)=>{p.card++}],
+  ["Denúncia anônima! Vá direto para a cadeia, sem passar pela Largada.",(s,p)=>jail(p)],
+  ["Avance até a Largada e receba R$200.",(s,p)=>adv(p,0)],
+  ["O seguro venceu: pague R$150 (vai para o prêmio do Carnaval).",(s,p)=>bank(s,p,150)],
+  ["Você venceu o concurso de culinária: receba R$80.",(s,p)=>{p.m+=80}],
+  ["Obras na rua: pague R$40 por casa e R$115 por hotel.",(s,p)=>reform(s,p,40,115)]
+];
 function broke(s){
   s.p.forEach((q,i)=>{
     if(!q.a||q.m>=0)return;
@@ -120,29 +73,54 @@ function broke(s){
   });
   if(s.p.filter(q=>q.a).length==1)s.ph="win";
 }
-function land(s,p,m0,pass,n){
+function fin(s){
+  const p=s.p[s.cur];
+  s.ph=s.again&&p.a&&!p.jail?"roll":"end";
+  if(s.ph=="roll"&&s.ev)s.ev.tx+=" 🎲 Você tirou dupla: jogue de novo!";
+  s.again=false;
+}
+function news(s){
+  if(s.news&&--s.news.left<=0){s.news=null;s.ev={i:1,ti:"📰 A notícia passou",tx:"Os aluguéis voltaram ao normal.",d:0}}
+  if(!s.news&&Math.random()<.4){
+    const g=rnd(8),boom=Math.random()<.5,i=T.findIndex(u=>u[3]===g);
+    s.news={g,t:boom?"boom":"crise",left:2};
+    s.ev={i,ti:"📰 Notícia do dia",tx:boom?"Turismo em alta! As cidades da cor "+GN[g]+" pagam o dobro de aluguel por 2 rodadas.":"Crise econômica! As cidades da cor "+GN[g]+" pagam só metade do aluguel por 2 rodadas.",d:0};
+  }
+}
+function arrive(s,p,n,dep){
   const i=p.pos,t=T[i],o=s.own[i];let ti=t[0],tx="",ph="end";
   if(t[1]=="p"||t[1]=="r"||t[1]=="u"){
     if(o<0){ph="buy";tx="Está livre! Se você comprar por R$"+t[2]+", cobra aluguel de quem parar aqui."}
-    else if(o!=p.i){const r=rent(s,i,n),ow=s.p[o];p.m-=r;ow.m+=r;tx=!r?"Esta propriedade é de "+ow.n+", mas está hipotecada: você não paga nada.":"Esta propriedade é de "+ow.n+". Você pagou R$"+r+" de aluguel"+(s.h[i]?" (há "+(s.h[i]==5?"um hotel":s.h[i]+" casa(s)")+" construída(s))":"")+"."}
-    else tx="Já é sua! Toque numa cidade sua para construir, se tiver todas da mesma cor."
-  }else if(t[1]=="c"){ti="Baús da Sorte";tx="Três baús apareceram! Escolha um para descobrir seu destino.";ph="chest";s.chests=drawChests()}
-  else if(t[1]=="x"){p.m-=t[2];tx="Hora de pagar o governo: R$"+t[2]+" de imposto."}
-  else if(t[1]=="g"){p.pos=10;p.j=1;tx="Você foi levado para a cadeia e perde a próxima vez."}
-  else tx={s:"Você parou na Largada! Receba R$200 toda vez que passar por aqui.",j:"Só visitando a cadeia. Nada acontece.",f:"Parque livre: descanse, não ganha nem perde nada."}[t[1]];
+    else if(o!=p.i){
+      let r=rent(s,i,n);if(s.dbl&&t[1]=="r")r*=2;
+      const ow=s.p[o];p.m-=r;ow.m+=r;
+      tx=!r?"Esta propriedade é de "+ow.n+", mas está hipotecada: você não paga nada.":"Esta propriedade é de "+ow.n+". Você pagou R$"+r+" de aluguel"+(s.h[i]?" (há "+(s.h[i]==5?"um hotel":s.h[i]+" casa(s)")+" construída(s))":"")+(s.dbl&&t[1]=="r"?" (dobrado pela carta)":"")+(s.news&&t[3]===s.news.g?(s.news.t=="boom"?" (turismo em alta: aluguel dobrado)":" (crise: aluguel pela metade)"):"")+".";
+    }else tx="Já é sua! Toque numa propriedade sua para construir ou hipotecar.";
+    s.dbl=0;
+  }else if(t[1]=="c"||t[1]=="k"){
+    const dk=t[1]=="c"?CHANCE:CHEST,c=dk[rnd(dk.length)],b=p.pos;
+    ti=t[1]=="c"?"Carta de Sorte":"Cofre da Cidade";tx=c[0];c[1](s,p);
+    if(p.pos!=b&&!p.jail&&dep<2){const r=arrive(s,p,n,dep+1);tx+=" ➜ "+r.ti+": "+r.tx;ph=r.ph}
+  }else if(t[1]=="x"){bank(s,p,t[2]);tx="Hora de pagar o governo: R$"+t[2]+" de imposto (vai para o prêmio do Carnaval)."}
+  else if(t[1]=="g"){jail(p);tx="Você foi preso! Na sua vez, pague R$50, use a carta de saída ou tente tirar dupla (3 tentativas)."}
+  else if(t[1]=="f"){const a=s.pot;p.m+=a;s.pot=0;tx=a?"Carnaval! Você levou todo o prêmio acumulado de multas e impostos: R$"+a+".":"Carnaval! Ainda não há prêmio acumulado, aproveite a festa."}
+  else tx={s:"Você parou na Largada! Receba R$200 toda vez que passar por aqui.",j:"Só visitando a cadeia. Nada acontece."}[t[1]];
+  return{ti,tx,ph};
+}
+function land(s,p,m0,pass,n){
+  const i=p.pos,r=arrive(s,p,n,0);let tx=r.tx;
   if(pass)tx+=" Você passou pela Largada: +R$200.";
-  s.ev={i,ti,tx,d:p.m-m0,art:t[1]=="c"?"mystery":null};s.ph=ph;broke(s);
+  s.ev={i,ti:r.ti,tx,d:p.m-m0};
+  broke(s);
+  if(s.ph=="win")return;
+  if(!p.a){s.again=false;s.ph="end"}else if(r.ph=="buy")s.ph="buy";else fin(s);
 }
 const M={min:2,max:6,
-  init(pl){return{p:pl.map((q,i)=>({id:q.id,n:q.name,i,m:1500,pos:0,j:0,a:1,shield:0})),own:T.map(()=>-1),h:T.map(()=>0),mort:T.map(()=>0),cur:0,ph:"roll",dice:[1,1],ev:null,chests:null}},
+  init(pl){return{p:pl.map((q,i)=>({id:q.id,n:q.name,i,m:1500,pos:0,jail:0,jt:0,card:0,a:1})),own:T.map(()=>-1),h:T.map(()=>0),mort:T.map(()=>0),cur:0,ph:"roll",dice:[1,1],ev:null,pot:0,round:1,news:null,dbls:0,again:false,dbl:0}},
   act(s,pid,m){
     const me=s.p.find(q=>q.id==pid),p=s.p[s.cur];
     if(!me||!me.a||s.ph=="win")return;
     if(me!=p)return "Não é a sua vez.";
-    if(m.a=="chest"&&s.ph=="chest"){
-      const j=Number(m.i);if(!Number.isInteger(j)||j<0||j>2||!s.chests)return "Escolha um dos três baús.";
-      s.ev=openChest(s,p,s.chests[j]);s.ev.tx="Você escolheu o baú "+(j+1)+". "+s.ev.tx;s.chests=null;s.ph="end";broke(s);return;
-    }
     if(["build","sell","mort","unmort"].includes(m.a)){
       const i=m.i,t=T[i];
       if(!t||s.own[i]!=me.i)return "Essa propriedade não é sua.";
@@ -173,24 +151,46 @@ const M={min:2,max:6,
       }
       return;
     }
-    if(m.a=="roll"&&s.ph=="roll"){
-      const d=[1+rnd(6),1+rnd(6)],n=d[0]+d[1],m0=p.m,old=p.pos;
-      s.dice=d;p.pos=(old+n)%40;
-      const pass=old+n>=40;if(pass)p.m+=200;
-      land(s,p,m0,pass,n);
+    if(m.a=="pay"&&s.ph=="roll"&&me.jail){
+      if(me.m<50)return "Faltam R$"+(50-me.m)+" para pagar a fiança.";
+      bank(s,me,50);me.jail=0;me.jt=0;
+      s.ev={i:10,ti:"Fiança paga",tx:"Você pagou R$50 (vai para o prêmio do Carnaval) e está livre! Agora é só rolar os dados.",d:-50};
+    }else if(m.a=="card"&&s.ph=="roll"&&me.jail&&me.card>0){
+      me.card--;me.jail=0;me.jt=0;
+      s.ev={i:10,ti:"Carta de saída livre",tx:"Você usou a carta e saiu da cadeia sem pagar. Agora é só rolar os dados.",d:0};
+    }else if(m.a=="roll"&&s.ph=="roll"){
+      const d=[1+rnd(6),1+rnd(6)],n=d[0]+d[1],m0=me.m,dbl=d[0]==d[1];let pre="";
+      s.dice=d;
+      if(me.jail){
+        if(dbl){me.jail=0;me.jt=0;pre="Dupla! Você saiu da cadeia. "}
+        else{
+          me.jt++;
+          if(me.jt>=3){bank(s,me,50);me.jail=0;me.jt=0;pre="Terceira tentativa sem dupla: você pagou R$50 e saiu da cadeia. "}
+          else{s.ev={i:10,ti:"Ainda preso",tx:"Sem dupla desta vez (tentativa "+me.jt+" de 3). Na próxima vez tente de novo, pague R$50 ou use uma carta.",d:0};s.ph="end";s.again=false;return}
+        }
+        s.again=false;
+      }else if(dbl){
+        s.dbls++;
+        if(s.dbls>=3){s.dbls=0;jail(me);s.ev={i:30,ti:"Três duplas seguidas!",tx:"A polícia desconfiou: você vai direto para a cadeia.",d:0};s.ph="end";s.again=false;return}
+        s.again=true;
+      }else{s.again=false;s.dbls=0}
+      const old=me.pos;me.pos=(old+n)%40;
+      const pass=old+n>=40;if(pass)me.m+=200;
+      land(s,me,m0,pass,n);
+      if(pre&&s.ev)s.ev.tx=pre+s.ev.tx;
     }else if(m.a=="buy"&&s.ph=="buy"&&me.m>=T[me.pos][2]){
       const t=T[me.pos];me.m-=t[2];s.own[me.pos]=me.i;
-      s.ev={i:me.pos,ti:"Você comprou "+t[0]+"!",tx:"Agora é sua. Quem parar aqui paga aluguel a você.",d:-t[2]};s.ph="end";
+      s.ev={i:me.pos,ti:"Você comprou "+t[0]+"!",tx:"Agora é sua. Quem parar aqui paga aluguel a você.",d:-t[2]};fin(s);
     }else if(m.a=="skip"&&s.ph=="buy"){
-      s.ev={i:me.pos,ti:"Você não comprou",tx:T[me.pos][0]+" continua livre para os outros jogadores.",d:0};s.ph="end";
+      s.ev={i:me.pos,ti:"Você não comprou",tx:T[me.pos][0]+" continua livre para os outros jogadores.",d:0};fin(s);
     }else if(m.a=="next"&&s.ph=="end"){
+      const prev=s.cur;
       do{s.cur=(s.cur+1)%s.p.length}while(!s.p[s.cur].a);
-      const q=s.p[s.cur];
-      if(q.j>0){q.j--;s.ev={i:10,ti:q.n+" está preso",tx:"Quem foi para a cadeia perde uma vez. Na próxima rodada volta a jogar.",d:0};s.ph="end"}
-      else{s.ph="roll";s.ev=null}
+      s.dbls=0;s.again=false;s.ph="roll";s.ev=null;
+      if(s.cur<=prev){s.round++;news(s)}
     }
   },
-  view(s,pid){const me=s.p.find(q=>q.id==pid);return{T,p:s.p.map(q=>({n:q.n,i:q.i,m:q.m,pos:q.pos,a:q.a,shield:q.shield||0})),own:s.own,h:s.h,mort:s.mort,cur:s.cur,ph:s.ph,dice:s.dice,ev:s.ev,me:me?me.i:-1,chestChoices:s.ph=="chest"&&me&&s.p[s.cur]&&me.id==s.p[s.cur].id?[0,1,2]:[]}}
+  view(s,pid){const me=s.p.find(q=>q.id==pid);return{T,p:s.p.map(q=>({n:q.n,i:q.i,m:q.m,pos:q.pos,a:q.a,jail:q.jail,card:q.card})),own:s.own,h:s.h,mort:s.mort,cur:s.cur,ph:s.ph,dice:s.dice,ev:s.ev,pot:s.pot,news:s.news&&{g:s.news.g,t:s.news.t,left:s.news.left,c:GN[s.news.g]},me:me?me.i:-1}}
 };
 
 /* ================= CIDADE DORME ================= */

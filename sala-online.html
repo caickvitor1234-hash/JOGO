@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sala de Jogos</title>
+<link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#e6f2ee;--ink:#10302f;--card:#fff;--line:#10302f;--gold:#ffc72c}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d2a2b;--ink:#e6f2ee;--card:#15393a;--line:#6fb3a8}}
+:root[data-theme="dark"]{--bg:#0d2a2b;--ink:#e6f2ee;--card:#15393a;--line:#6fb3a8}
+body.night{--bg:#0a0f24;--ink:#e6e6ff;--card:#171d3f;--line:#8a8ff0}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font:600 15px Nunito,system-ui,sans-serif;padding:env(safe-area-inset-top,0) 8px env(safe-area-inset-bottom,0)}
+#app{max-width:660px;margin:0 auto;text-align:center;padding:10px 0}
+h1,h2{font-family:"Bowlby One",system-ui,sans-serif;font-weight:400;margin:6px 0}
+h1{font-size:clamp(24px,7vw,38px)}h2{font-size:clamp(14px,4vw,19px)}
+input{font:inherit;padding:9px 12px;border:2px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);margin:4px}
+.btn,.btn2{font:400 clamp(12px,3.4vw,16px) "Bowlby One",system-ui,sans-serif;background:var(--gold);color:#10302f;border:2px solid var(--line);border-radius:12px;padding:9px 14px;box-shadow:0 3px 0 var(--line);cursor:pointer;margin:3px}
+.btn2{background:var(--card);color:var(--ink)}
+.btn:active{transform:translateY(3px);box-shadow:none}.btn:disabled{opacity:.45;cursor:not-allowed}
+.gs{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin:12px 0}
+.gc{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:14px;border-top:10px solid var(--c)}
+.ga{font-size:52px}.l{font-size:13px;opacity:.9}.dn{color:#e03a3a}.up{color:#1a9a5b}
+.code{font:400 48px "Bowlby One",system-ui,sans-serif;letter-spacing:8px;margin:8px}
+.sc{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin:6px 0}
+.sc span{border:2px solid;border-radius:20px;padding:2px 9px;font-size:13px}
+.out{opacity:.4;text-decoration:line-through}
+#board{display:grid;grid-template:repeat(11,1fr)/repeat(11,1fr);gap:2px;aspect-ratio:1;width:100%}
+.t{border:1.5px solid var(--line);background:var(--card);position:relative;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;font-size:clamp(4.5px,1.35vw,9px);line-height:1.05;overflow:hidden;border-radius:3px;cursor:pointer}
+.t .b{position:absolute;top:0;left:0;right:0;height:18%}
+.t .ic{font-size:clamp(9px,2.6vw,17px);margin-top:12%}
+.t em{position:absolute;top:18%;right:0;font-style:normal;font-size:clamp(6px,1.6vw,10px)}
+.t.on{outline:3px solid var(--gold);z-index:2}
+.k{position:absolute;top:16%;left:0;right:0;display:flex;justify-content:center;font-size:clamp(9px,2.5vw,16px)}
+#mid{grid-area:2/2/11/11;background:var(--card);border:2px dashed var(--line);border-radius:14px;padding:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;overflow:auto;cursor:default}
+.d{font-size:clamp(24px,6vw,38px);line-height:1}
+.ev{display:flex;flex-direction:column;align-items:center;gap:3px;margin:4px 0}
+.ev p{margin:0;font-size:clamp(10px,2.5vw,13px);line-height:1.25}
+.art{position:relative;width:min(100%,200px)}.art svg,.art img{width:100%;border-radius:10px;border:2px solid var(--line);display:block}
+.art img{position:absolute;inset:0;height:100%;object-fit:cover}
+.dl{font:400 clamp(14px,4vw,20px) "Bowlby One",system-ui,sans-serif}
+.vb{margin-bottom:6px}
+.t .ti{position:absolute;top:0;left:0;right:0;height:58%}.t .ti svg{width:100%;height:100%;display:block}.t .nm{padding:1px;font-weight:800;position:relative;z-index:1}
+.art video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:10px;border:2px solid var(--line)}
+button:focus-visible,input:focus-visible,.t:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+</style></head><body>
+<div id="app"></div>
+<script>
+const rnd=n=>Math.random()*n|0,uid=()=>Math.random().toString(36).slice(2,10);
+/* ================= METRÓPOLE ================= */
+const T=[["Largada","s"],["Cuiabá","p",60,0],["Sorte","c"],["Campo Grande","p",60,0],["Imposto","x",200],["Ferrovia Norte","r",200],["Palmas","p",100,1],["Cofre","k"],["Vitória","p",100,1],["Aracaju","p",120,1],["Cadeia","j"],["Natal","p",140,2],["Companhia de Luz","u",150],["João Pessoa","p",140,2],["Maceió","p",160,2],["Ferrovia Leste","r",200],["Teresina","p",180,3],["Sorte","c"],["Goiânia","p",180,3],["Florianópolis","p",200,3],["Carnaval","f"],["Manaus","p",220,4],["Cofre","k"],["Belém","p",220,4],["Fortaleza","p",240,4],["Ferrovia Sul","r",200],["Recife","p",260,5],["Curitiba","p",260,5],["Companhia de Água","u",150],["Porto Alegre","p",280,5],["Vá preso","g"],["Salvador","p",300,6],["Belo Horizonte","p",300,6],["Cofre","k"],["Brasília","p",320,6],["Ferrovia Oeste","r",200],["Sorte","c"],["São Paulo","p",350,7],["Imposto","x",100],["Rio de Janeiro","p",400,7]];
+const MULT=[1,2,4,8,13,20,30],GN=["marrom","azul-claro","rosa","laranja","vermelha","azul","verde","roxa"];
+const full=(s,i)=>T.every((u,j)=>u[3]!==T[i][3]||s.own[j]===s.own[i]);
+const rent=(s,i,n)=>{
+  const t=T[i],o=s.own[i];let r;
+  if(s.mort[i])return 0;
+  if(t[1]=="r")r=25*2**(T.filter((u,j)=>u[1]=="r"&&s.own[j]==o).length-1);
+  else if(t[1]=="u")r=n*(T.filter((u,j)=>u[1]=="u"&&s.own[j]==o).length>1?10:4);
+  else{const h=s.h[i];r=t[2]/10*MULT[h?h+1:full(s,i)?1:0]}
+  if(s.news&&t[3]===s.news.g)r=Math.round(r*(s.news.t=="boom"?2:.5));
+  return r;
+};
+const adv=(p,to)=>{if(to<p.pos)p.m+=200;p.pos=to};
+const bank=(s,p,a)=>{p.m-=a;s.pot+=a};
+const jail=p=>{p.pos=10;p.jail=1;p.jt=0};
+const others=(s,p)=>s.p.filter(q=>q!=p&&q.a);
+const reform=(s,p,c,h)=>{let a=0;s.h.forEach((x,i)=>{if(s.own[i]==p.i)a+=x==5?h:x*c});bank(s,p,a)};
+const CHANCE=[
+  ["Avance até a Largada e receba R$200.",(s,p)=>adv(p,0)],
+  ["Viaje até Salvador. Se passar pela Largada, receba R$200.",(s,p)=>adv(p,31)],
+  ["Siga até o Rio de Janeiro. Se passar pela Largada, receba R$200.",(s,p)=>adv(p,39)],
+  ["Avance até o Carnaval e leve o prêmio acumulado!",(s,p)=>adv(p,20)],
+  ["Siga até a ferrovia mais próxima. Se tiver dono, você paga o dobro do aluguel.",(s,p)=>{adv(p,[5,15,25,35].find(x=>x>p.pos)||5);s.dbl=1}],
+  ["Volte 3 casas.",(s,p)=>{p.pos=(p.pos+37)%40}],
+  ["Vá direto para a cadeia, sem passar pela Largada.",(s,p)=>jail(p)],
+  ["Saída livre da cadeia! Guarde esta carta para usar quando precisar.",(s,p)=>{p.card++}],
+  ["Multa por excesso de velocidade: pague R$80 (vai para o prêmio do Carnaval).",(s,p)=>bank(s,p,80)],
+  ["Seu time foi campeão! Receba R$150.",(s,p)=>{p.m+=150}],
+  ["Prêmio da loteria: receba R$200.",(s,p)=>{p.m+=200}],
+  ["Reforma geral: pague R$25 por casa e R$100 por hotel que você tem.",(s,p)=>reform(s,p,25,100)],
+  ["Você virou síndico: pague R$50 a cada jogador.",(s,p)=>others(s,p).forEach(q=>{q.m+=50;p.m-=50})],
+  ["Conta de luz atrasada: pague R$60 (vai para o prêmio do Carnaval).",(s,p)=>bank(s,p,60)]
+];
+const CHEST=[
+  ["Erro do banco a seu favor: receba R$200.",(s,p)=>{p.m+=200}],
+  ["Restituição do imposto: receba R$100.",(s,p)=>{p.m+=100}],
+  ["Herança de um tio distante: receba R$250.",(s,p)=>{p.m+=250}],
+  ["Consulta médica: pague R$50 (vai para o prêmio do Carnaval).",(s,p)=>bank(s,p,50)],
+  ["Mensalidade da escola: pague R$100 (vai para o prêmio do Carnaval).",(s,p)=>bank(s,p,100)],
+  ["Você vendeu um bem usado: receba R$120.",(s,p)=>{p.m+=120}],
+  ["Seu aniversário! Cada jogador paga R$30 a você.",(s,p)=>others(s,p).forEach(q=>{q.m-=30;p.m+=30})],
+  ["Saída livre da cadeia! Guarde esta carta para usar quando precisar.",(s,p)=>{p.card++}],
+  ["Denúncia anônima! Vá direto para a cadeia, sem passar pela Largada.",(s,p)=>jail(p)],
+  ["Avance até a Largada e receba R$200.",(s,p)=>adv(p,0)],
+  ["O seguro venceu: pague R$150 (vai para o prêmio do Carnaval).",(s,p)=>bank(s,p,150)],
+  ["Você venceu o concurso de culinária: receba R$80.",(s,p)=>{p.m+=80}],
+  ["Obras na rua: pague R$40 por casa e R$115 por hotel.",(s,p)=>reform(s,p,40,115)]
+];
+function broke(s){
+  s.p.forEach((q,i)=>{
+    if(!q.a||q.m>=0)return;
+    const sold=[],mg=[];
+    T.forEach((t,j)=>{if(s.own[j]==i)while(s.h[j]>0&&q.m<0){s.h[j]--;q.m+=Math.round(t[2]/20)*5;sold.push(t[0])}});
+    T.forEach((t,j)=>{if(s.own[j]==i&&!s.mort[j]&&q.m<0&&!s.h[j]){s.mort[j]=1;q.m+=t[2]/2;mg.push(t[0])}});
+    if(s.ev&&(sold.length||mg.length))s.ev.tx+=" 🏦 Para pagar a conta, "+q.n+(sold.length?" vendeu casas em "+[...new Set(sold)].join(", "):"")+(mg.length?(sold.length?" e":"")+" hipotecou "+mg.join(", "):"")+".";
+    if(q.m<0){
+      q.a=0;s.own=s.own.map(o=>o==i?-1:o);s.h=s.h.map((h,j)=>s.own[j]<0?0:h);s.mort=s.mort.map((m,j)=>s.own[j]<0?0:m);
+      if(s.ev)s.ev.tx+=" 💥 "+q.n+" ficou sem dinheiro, faliu e saiu do jogo!";
+    }
+  });
+  if(s.p.filter(q=>q.a).length==1)s.ph="win";
+}
+function fin(s){
+  const p=s.p[s.cur];
+  s.ph=s.again&&p.a&&!p.jail?"roll":"end";
+  if(s.ph=="roll"&&s.ev)s.ev.tx+=" 🎲 Você tirou dupla: jogue de novo!";
+  s.again=false;
+}
+function news(s){
+  if(s.news&&--s.news.left<=0){s.news=null;s.ev={i:1,ti:"📰 A notícia passou",tx:"Os aluguéis voltaram ao normal.",d:0}}
+  if(!s.news&&Math.random()<.4){
+    const g=rnd(8),boom=Math.random()<.5,i=T.findIndex(u=>u[3]===g);
+    s.news={g,t:boom?"boom":"crise",left:2};
+    s.ev={i,ti:"📰 Notícia do dia",tx:boom?"Turismo em alta! As cidades da cor "+GN[g]+" pagam o dobro de aluguel por 2 rodadas.":"Crise econômica! As cidades da cor "+GN[g]+" pagam só metade do aluguel por 2 rodadas.",d:0};
+  }
+}
+function arrive(s,p,n,dep){
+  const i=p.pos,t=T[i],o=s.own[i];let ti=t[0],tx="",ph="end";
+  if(t[1]=="p"||t[1]=="r"||t[1]=="u"){
+    if(o<0){ph="buy";tx="Está livre! Se você comprar por R$"+t[2]+", cobra aluguel de quem parar aqui."}
+    else if(o!=p.i){
+      let r=rent(s,i,n);if(s.dbl&&t[1]=="r")r*=2;
+      const ow=s.p[o];p.m-=r;ow.m+=r;
+      tx=!r?"Esta propriedade é de "+ow.n+", mas está hipotecada: você não paga nada.":"Esta propriedade é de "+ow.n+". Você pagou R$"+r+" de aluguel"+(s.h[i]?" (há "+(s.h[i]==5?"um hotel":s.h[i]+" casa(s)")+" construída(s))":"")+(s.dbl&&t[1]=="r"?" (dobrado pela carta)":"")+(s.news&&t[3]===s.news.g?(s.news.t=="boom"?" (turismo em alta: aluguel dobrado)":" (crise: aluguel pela metade)"):"")+".";
+    }else tx="Já é sua! Toque numa propriedade sua para construir ou hipotecar.";
+    s.dbl=0;
+  }else if(t[1]=="c"||t[1]=="k"){
+    const dk=t[1]=="c"?CHANCE:CHEST,c=dk[rnd(dk.length)],b=p.pos;
+    ti=t[1]=="c"?"Carta de Sorte":"Cofre da Cidade";tx=c[0];c[1](s,p);
+    if(p.pos!=b&&!p.jail&&dep<2){const r=arrive(s,p,n,dep+1);tx+=" ➜ "+r.ti+": "+r.tx;ph=r.ph}
+  }else if(t[1]=="x"){bank(s,p,t[2]);tx="Hora de pagar o governo: R$"+t[2]+" de imposto (vai para o prêmio do Carnaval)."}
+  else if(t[1]=="g"){jail(p);tx="Você foi preso! Na sua vez, pague R$50, use a carta de saída ou tente tirar dupla (3 tentativas)."}
+  else if(t[1]=="f"){const a=s.pot;p.m+=a;s.pot=0;tx=a?"Carnaval! Você levou todo o prêmio acumulado de multas e impostos: R$"+a+".":"Carnaval! Ainda não há prêmio acumulado, aproveite a festa."}
+  else tx={s:"Você parou na Largada! Receba R$200 toda vez que passar por aqui.",j:"Só visitando a cadeia. Nada acontece."}[t[1]];
+  return{ti,tx,ph};
+}
+function land(s,p,m0,pass,n){
+  const i=p.pos,r=arrive(s,p,n,0);let tx=r.tx;
+  if(pass)tx+=" Você passou pela Largada: +R$200.";
+  s.ev={i,ti:r.ti,tx,d:p.m-m0};
+  broke(s);
+  if(s.ph=="win")return;
+  if(!p.a){s.again=false;s.ph="end"}else if(r.ph=="buy")s.ph="buy";else fin(s);
+}
+const M={min:2,max:6,
+  init(pl){return{p:pl.map((q,i)=>({id:q.id,n:q.name,i,m:1500,pos:0,jail:0,jt:0,card:0,a:1})),own:T.map(()=>-1),h:T.map(()=>0),mort:T.map(()=>0),cur:0,ph:"roll",dice:[1,1],ev:null,pot:0,round:1,news:null,dbls:0,again:false,dbl:0}},
+  act(s,pid,m){
+    const me=s.p.find(q=>q.id==pid),p=s.p[s.cur];
+    if(!me||!me.a||s.ph=="win")return;
+    if(me!=p)return "Não é a sua vez.";
+    if(["build","sell","mort","unmort"].includes(m.a)){
+      const i=m.i,t=T[i];
+      if(!t||s.own[i]!=me.i)return "Essa propriedade não é sua.";
+      const hc=Math.round((t[2]||0)/20)*10,grp=T.map((u,j)=>j).filter(j=>T[j][3]!==undefined&&T[j][3]===t[3]);
+      if(m.a=="build"){
+        if(t[1]!="p")return "Só dá para construir em cidades.";
+        if(!full(s,i))return "Para construir você precisa ter todas as cidades da mesma cor.";
+        if(s.mort[i])return "Esta cidade está hipotecada. Resgate antes de construir.";
+        if(s.h[i]>=5)return "Já existe um hotel aqui.";
+        if(me.m<hc)return "Faltam R$"+(hc-me.m)+" para construir.";
+        me.m-=hc;s.h[i]++;
+        s.ev={i,ti:"Construção em "+t[0],tx:(s.h[i]==5?"Hotel construído! ":"Casa construída! ")+"O aluguel desta cidade subiu bastante.",d:-hc};
+      }else if(m.a=="sell"){
+        if(!s.h[i])return "Não há casas para vender aqui.";
+        s.h[i]--;me.m+=hc/2;
+        s.ev={i,ti:"Venda em "+t[0],tx:"Você vendeu uma construção pela metade do preço e o aluguel caiu.",d:hc/2};
+      }else if(m.a=="mort"){
+        if(s.mort[i])return "Já está hipotecada.";
+        if(grp.some(j=>s.h[j]))return "Venda as casas desse grupo antes de hipotecar.";
+        me.m+=t[2]/2;s.mort[i]=1;
+        s.ev={i,ti:"Hipoteca de "+t[0],tx:"Você recebeu metade do valor do banco. Enquanto estiver hipotecada, ninguém paga aluguel nela.",d:t[2]/2};
+      }else{
+        const c=Math.round(t[2]/2*1.1);
+        if(!s.mort[i])return "Esta propriedade não está hipotecada.";
+        if(me.m<c)return "Faltam R$"+(c-me.m)+" para resgatar.";
+        me.m-=c;s.mort[i]=0;
+        s.ev={i,ti:"Resgate de "+t[0],tx:"Você pagou ao banco o valor da hipoteca mais 10% de juros. A propriedade voltou a render aluguel.",d:-c};
+      }
+      return;
+    }
+    if(m.a=="pay"&&s.ph=="roll"&&me.jail){
+      if(me.m<50)return "Faltam R$"+(50-me.m)+" para pagar a fiança.";
+      bank(s,me,50);me.jail=0;me.jt=0;
+      s.ev={i:10,ti:"Fiança paga",tx:"Você pagou R$50 (vai para o prêmio do Carnaval) e está livre! Agora é só rolar os dados.",d:-50};
+    }else if(m.a=="card"&&s.ph=="roll"&&me.jail&&me.card>0){
+      me.card--;me.jail=0;me.jt=0;
+      s.ev={i:10,ti:"Carta de saída livre",tx:"Você usou a carta e saiu da cadeia sem pagar. Agora é só rolar os dados.",d:0};
+    }else if(m.a=="roll"&&s.ph=="roll"){
+      const d=[1+rnd(6),1+rnd(6)],n=d[0]+d[1],m0=me.m,dbl=d[0]==d[1];let pre="";
+      s.dice=d;
+      if(me.jail){
+        if(dbl){me.jail=0;me.jt=0;pre="Dupla! Você saiu da cadeia. "}
+        else{
+          me.jt++;
+          if(me.jt>=3){bank(s,me,50);me.jail=0;me.jt=0;pre="Terceira tentativa sem dupla: você pagou R$50 e saiu da cadeia. "}
+          else{s.ev={i:10,ti:"Ainda preso",tx:"Sem dupla desta vez (tentativa "+me.jt+" de 3). Na próxima vez tente de novo, pague R$50 ou use uma carta.",d:0};s.ph="end";s.again=false;return}
+        }
+        s.again=false;
+      }else if(dbl){
+        s.dbls++;
+        if(s.dbls>=3){s.dbls=0;jail(me);s.ev={i:30,ti:"Três duplas seguidas!",tx:"A polícia desconfiou: você vai direto para a cadeia.",d:0};s.ph="end";s.again=false;return}
+        s.again=true;
+      }else{s.again=false;s.dbls=0}
+      const old=me.pos;me.pos=(old+n)%40;
+      const pass=old+n>=40;if(pass)me.m+=200;
+      land(s,me,m0,pass,n);
+      if(pre&&s.ev)s.ev.tx=pre+s.ev.tx;
+    }else if(m.a=="buy"&&s.ph=="buy"&&me.m>=T[me.pos][2]){
+      const t=T[me.pos];me.m-=t[2];s.own[me.pos]=me.i;
+      s.ev={i:me.pos,ti:"Você comprou "+t[0]+"!",tx:"Agora é sua. Quem parar aqui paga aluguel a você.",d:-t[2]};fin(s);
+    }else if(m.a=="skip"&&s.ph=="buy"){
+      s.ev={i:me.pos,ti:"Você não comprou",tx:T[me.pos][0]+" continua livre para os outros jogadores.",d:0};fin(s);
+    }else if(m.a=="next"&&s.ph=="end"){
+      const prev=s.cur;
+      do{s.cur=(s.cur+1)%s.p.length}while(!s.p[s.cur].a);
+      s.dbls=0;s.again=false;s.ph="roll";s.ev=null;
+      if(s.cur<=prev){s.round++;news(s)}
+    }
+  },
+  view(s,pid){const me=s.p.find(q=>q.id==pid);return{T,p:s.p.map(q=>({n:q.n,i:q.i,m:q.m,pos:q.pos,a:q.a,jail:q.jail,card:q.card})),own:s.own,h:s.h,mort:s.mort,cur:s.cur,ph:s.ph,dice:s.dice,ev:s.ev,pot:s.pot,news:s.news&&{g:s.news.g,t:s.news.t,left:s.news.left,c:GN[s.news.g]},me:me?me.i:-1}}
+};
+
+/* ================= CIDADE DORME ================= */
+function check(s){
+  const k=s.p.filter(q=>q.a&&q.r=="assassino").length,o=s.p.filter(q=>q.a&&q.r!="assassino").length;
+  if(!k||k>=o){s.ph="end";s.win=k?"Os assassinos":"A cidade";s.ev={ti:"Fim de jogo",tx:s.win+" venceram!"};return true}
+  return false;
+}
+function resolveNight(s){
+  const as=s.p.filter(q=>q.a&&q.r=="assassino"),k=as.map(q=>s.acts[q.id]).find(Boolean),
+    doc=s.p.find(q=>q.a&&q.r=="médico"),sv=doc&&s.acts[doc.id],det=s.p.find(q=>q.a&&q.r=="detetive");
+  if(det&&s.acts[det.id]){const t=s.p.find(q=>q.id==s.acts[det.id]);s.res[det.id]=t.n+(t.r=="assassino"?" é um ASSASSINO!":" é inocente.")}
+  let tx;
+  if(k&&k!=sv){const v=s.p.find(q=>q.id==k);v.a=0;tx=v.n+" foi encontrado morto. Era "+v.r+"."}
+  else tx=k?"Alguém foi atacado, mas o médico salvou a vítima!":"Ninguém morreu esta noite.";
+  s.ph="day";s.acts={};s.votes={};s.ev={ti:"A cidade acorda",tx:tx+" Conversem na voz e votem em quem expulsar."};
+  check(s);
+}
+function tally(s){
+  const c={};Object.values(s.votes).forEach(v=>c[v]=(c[v]||0)+1);
+  const mx=Math.max(0,...Object.values(c)),top=Object.keys(c).filter(k=>c[k]==mx);let tx;
+  if(mx&&top.length==1){const v=s.p.find(q=>q.id==top[0]);v.a=0;tx=v.n+" foi expulso pela cidade. Era "+v.r+"!"}
+  else tx="Empate ou ninguém votou: ninguém foi expulso.";
+  s.ev={ti:"Resultado da votação",tx};
+  if(!check(s)){s.ph="night";s.day++;s.acts={};s.votes={};s.res={};s.ev.tx+=" A noite cai novamente..."}
+}
+const D={min:4,max:12,
+  init(pl){
+    const n=pl.length,roles=["assassino",...(n>=8?["assassino"]:[]),"detetive",...(n>=6?["médico"]:[])];
+    while(roles.length<n)roles.push("cidadão");
+    for(let i=roles.length-1;i>0;i--){const j=rnd(i+1);[roles[i],roles[j]]=[roles[j],roles[i]]}
+    return{p:pl.map((q,i)=>({id:q.id,n:q.name,r:roles[i],a:1})),ph:"night",day:1,acts:{},votes:{},res:{},ev:{ti:"A cidade dorme...",tx:"Noite 1. Quem tem poderes age em segredo."}};
+  },
+  act(s,pid,m,host){
+    if(m.a=="force"&&pid==host&&s.ph!="end"){s.ph=="night"?resolveNight(s):tally(s);return}
+    const me=s.p.find(q=>q.id==pid);
+    if(!me||!me.a||s.ph=="end")return;
+    const t=s.p.find(q=>q.id==m.t&&q.a&&q.id!=pid);
+    if(m.a=="night"&&s.ph=="night"&&me.r!="cidadão"&&t&&!s.acts[pid]&&!(me.r=="assassino"&&t.r=="assassino")){
+      s.acts[pid]=t.id;
+      if(s.p.every(q=>!q.a||q.r=="cidadão"||s.acts[q.id]))resolveNight(s);
+    }else if(m.a=="vote"&&s.ph=="day"&&t&&!s.votes[pid]){
+      s.votes[pid]=t.id;
+      if(s.p.every(q=>!q.a||s.votes[q.id]))tally(s);
+    }
+  },
+  view(s,pid){
+    const me=s.p.find(q=>q.id==pid),end=s.ph=="end";
+    return{p:s.p.map(q=>({id:q.id,n:q.n,a:q.a,r:(end||q.id==pid||(me.r=="assassino"&&q.r=="assassino"))?q.r:null})),
+      ph:s.ph,day:s.day,ev:s.ev,res:s.res[pid]||null,me:{id:me.id,r:me.r,a:me.a},win:s.win,
+      acted:!!s.acts[pid],voted:!!s.votes[pid],nv:Object.keys(s.votes).length};
+  }
+};
+
+
+const $=s=>document.querySelector(s),A=$("#app");
+const GM={metropole:{n:"Metrópole",e:"🏙️",d:"Compre cidades, construa casas e hotéis e leve os rivais à falência.",min:2,max:6,c:"#2f6fed"},
+cidade:{n:"Cidade Dorme",e:"🌙",d:"De noite os assassinos agem, de dia a cidade vota. Descubra quem é o culpado.",min:4,max:12,c:"#6b3fa0"}};
+const G=["#8d5a3b","#3cc2e8","#e0559c","#ff9a2e","#e03a3a","#2f6fed","#1fa971","#9b5de5"],PC=["#ff5d5d","#2f6fed","#1fa971","#ff9a2e","#9b5de5","#00b8d9"],PE=["🚗","🛵","🚂","✈️","🚁","⛵"];
+const IC={s:"🏁",c:"🍀",k:"🧰",x:"💸",j:"🔒",f:"🌴",g:"🚓",r:"🚆",u:"💡"};
+const LM={"Cuiabá":"🐆","Campo Grande":"🦜","Palmas":"🌅","Vitória":"⚓","Aracaju":"🦀","Natal":"🏖️","João Pessoa":"☀️","Maceió":"🐠","Teresina":"🌊","Goiânia":"🌾","Florianópolis":"🏄","Manaus":"🌳","Belém":"🥭","Fortaleza":"🏝️","Recife":"🌉","Curitiba":"🌲","Porto Alegre":"🧉","Salvador":"🥁","Belo Horizonte":"⛰️","Brasília":"🏛️","São Paulo":"🏙️","Rio de Janeiro":"🗽","Companhia de Luz":"💡","Companhia de Água":"💧","Carnaval":"🎭"};
+let S=null,W,retry=0,muted=false,name="",toast="",sel=null,EVK="";
+const ld=()=>{try{return JSON.parse(localStorage.room)}catch{return null}},sv=o=>{try{localStorage.room=JSON.stringify(o)}catch{}},cl=()=>{try{localStorage.removeItem("room")}catch{}};
+try{name=localStorage.nome||""}catch{}
+const slug=n=>n.normalize("NFD").replace(/[^a-z0-9]/gi,"").toLowerCase();
+const pos=i=>i<10?[11,11-i]:i<20?[11-(i-10),1]:i<30?[1,1+(i-20)]:[1+(i-30),11];
+
+/* ---------- conexão com reconexão automática ---------- */
+const GAMES={metropole:M,cidade:D};
+let ME="",HOST=null,NR=null,hello=null,hbOn=false,pt=null;
+try{ME=localStorage.pid||(localStorage.pid=uid())}catch{ME=uid()}
+const send=o=>{
+  if(o.t=="sig"){NR&&NR.emit("sig",{to:o.to,from:ME,d:JSON.parse(JSON.stringify(o.d))}).catch(()=>{})}
+  else if(HOST)handle(o,ME);
+  else NR&&NR.emit("cli",{...o,id:ME}).catch(()=>{});
+};
+const act=o=>{toast="";send({t:"act",...o})},st=()=>{toast="";send({t:"start"})};
+function tell(id,m){if(id==ME){toast=m;draw()}else NR&&NR.emit("host",{to:id,k:"err",m}).catch(()=>{})}
+function handle(m,id){
+  const r=HOST;if(!r)return;
+  const q=r.pl.find(x=>x.id==id);
+  if(m.t=="hello"){
+    if(!q){
+      if(r.s)return tell(id,"Essa partida já começou.");
+      if(r.pl.length>=GAMES[r.game].max)return tell(id,"Sala cheia.");
+      r.pl.push({id,name:String(m.name||"Jogador").slice(0,14)});
+    }
+  }else if(!q)return;
+  else if(m.t=="voice")q.v=!!m.on;
+  else if(m.t=="start"){if(id==r.host&&!r.s&&r.pl.length>=GAMES[r.game].min)r.s=GAMES[r.game].init(r.pl)}
+  else if(m.t=="act"&&r.s){const e=GAMES[r.game].act(r.s,id,m,r.host);if(e)tell(id,e)}
+  push();
+}
+function push(){
+  const r=HOST;if(!r||!NR)return;
+  const here=NR.peers().map(p=>p.presence&&p.presence.id);
+  const base={room:r.c,host:r.host,game:r.game,go:!!r.s,pl:r.pl.map(x=>({id:x.id,name:x.name,on:x.id==ME||here.includes(x.id),v:!!x.v}))};
+  r.pl.forEach(x=>{
+    const g=r.s?GAMES[r.game].view(r.s,x.id):null;if(g)delete g.T;
+    const m={...base,you:x.id,g};
+    if(x.id==ME)gotState(m);else NR.emit("host",{to:x.id,st:m}).catch(()=>{});
+  });
+  try{localStorage.hs=JSON.stringify({t:Date.now(),c:r.c,game:r.game,pl:r.pl,s:r.s})}catch{}
+}
+function gotState(m){
+  if(m.g&&m.game=="metropole")m.g.T=T;
+  if(!S||S.go!=m.go)toast="";
+  S=m;if(hello){clearInterval(hello);hello=null}
+  const k=JSON.stringify(m.g&&m.g.ev);if(k!=EVK){EVK=k;sel=null}
+  if(LS)syncVoice();
+  draw();
+}
+async function enter(c){
+  const rm=await claude.use("room");
+  if(!rm){toast="A sala online só funciona para quem abriu o link logado e com permissão de colaborador.";draw();return false}
+  try{NR=await rm.join("sala-"+c.toLowerCase())}catch(e){NR=null;toast="Não consegui entrar na sala ("+(e&&e.code||"erro")+").";draw();return false}
+  NR.presence({id:ME}).catch(()=>{});
+  NR.on("host",m=>{const d=m.data;if(!d||(d.to&&d.to!=ME))return;if(d.st)gotState(d.st);else if(d.k=="err"){toast=d.m;draw()}});
+  NR.on("cli",m=>{const d=m.data;if(HOST&&d&&d.id&&d.id!=ME)handle(d,d.id)});
+  NR.on("sig",m=>{const d=m.data;if(d&&d.to==ME&&d.from!=ME)onSig(d.from,d.d)});
+  NR.onPeers(()=>{if(HOST){clearTimeout(pt);pt=setTimeout(push,300)}});
+  if(!hbOn){hbOn=true;setInterval(()=>HOST&&push(),4000)}
+  return true;
+}
+async function mk(g){
+  const c=Math.random().toString(36).slice(2,6);
+  if(!await enter(c))return;
+  HOST={c:c.toUpperCase(),game:g,host:ME,pl:[],s:null};
+  handle({t:"hello",name:name||"Jogador"},ME);
+}
+function startHello(){
+  const go=()=>send({t:"hello",name:name||"Jogador"});go();clearInterval(hello);hello=setInterval(go,2000);
+  setTimeout(()=>{if(hello){clearInterval(hello);hello=null;try{NR.leave()}catch{}NR=null;toast="Não encontrei essa sala. Confira o código e veja se o anfitrião está com a página aberta.";draw()}},9000);
+}
+async function jn(){
+  const c=($("#cd").value||"").trim();if(c.length<4)return;
+  if(!await enter(c))return;
+  try{localStorage.jr=JSON.stringify({c,t:Date.now()})}catch{}
+  startHello();
+}
+async function resume(){
+  try{
+    const hs=JSON.parse(localStorage.hs||"null"),jr=JSON.parse(localStorage.jr||"null");
+    if(hs&&Date.now()-hs.t<72e5){if(await enter(hs.c)){HOST={c:hs.c,game:hs.game,host:ME,pl:hs.pl,s:hs.s};push()}}
+    else if(jr&&Date.now()-jr.t<72e5){if(await enter(jr.c))startHello()}
+  }catch{}
+}
+function leave(){
+  try{localStorage.removeItem("hs");localStorage.removeItem("jr")}catch{}
+  if(LS){LS.getTracks().forEach(t=>t.stop());LS=null;Object.keys(PCs).forEach(hang);send({t:"voice",on:false})}
+  clearInterval(hello);hello=null;HOST=null;
+  if(NR){try{NR.leave()}catch{}NR=null}
+  S=null;draw();
+}
+
+/* ---------- voz nativa (WebRTC, sem conta externa) ---------- */
+let LS=null,PCs={},ICE=[{urls:"stun:stun.l.google.com:19302"}],audios={};
+async function voice(){
+  if(LS){muted=!muted;micSync();draw();return}
+  try{
+    LS=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+    muted=false;send({t:"voice",on:true});
+    S.pl.forEach(q=>{if(q.v&&q.id!=S.you)call(q.id)});
+    micSync();draw();
+  }catch(e){LS=null;toast="Não consegui usar o microfone. Permita o acesso no navegador (o site precisa estar em HTTPS).";draw()}
+}
+function peer(id){
+  if(PCs[id])return PCs[id];
+  const pc=new RTCPeerConnection({iceServers:ICE});pc.q=[];PCs[id]=pc;
+  LS.getTracks().forEach(t=>pc.addTrack(t,LS));
+  pc.onicecandidate=e=>e.candidate&&send({t:"sig",to:id,d:{c:e.candidate}});
+  pc.ontrack=e=>{let a=audios[id];if(!a){a=audios[id]=document.createElement("audio");a.autoplay=true;a.playsInline=true;document.body.appendChild(a)}a.srcObject=e.streams[0]};
+  pc.onconnectionstatechange=()=>{if(pc.connectionState=="failed"){toast="A voz falhou com um jogador (rede restrita). O administrador pode configurar um servidor TURN (veja o LEIA-ME).";hang(id);draw()}};
+  return pc;
+}
+async function call(id){const pc=peer(id),o=await pc.createOffer();await pc.setLocalDescription(o);send({t:"sig",to:id,d:{s:pc.localDescription}})}
+async function onSig(from,d){
+  if(!LS)return;
+  const pc=peer(from);
+  if(d.s){
+    if(d.s.type=="offer"&&pc.signalingState!="stable"){if(S.you>from)return;await pc.setLocalDescription({type:"rollback"})}
+    await pc.setRemoteDescription(d.s);
+    pc.q.forEach(x=>pc.addIceCandidate(x).catch(()=>{}));pc.q=[];
+    if(d.s.type=="offer"){const a=await pc.createAnswer();await pc.setLocalDescription(a);send({t:"sig",to:from,d:{s:pc.localDescription}})}
+  }else if(d.c){pc.remoteDescription?pc.addIceCandidate(d.c).catch(()=>{}):pc.q.push(d.c)}
+}
+function hang(id){if(PCs[id]){PCs[id].close();delete PCs[id]}if(audios[id]){audios[id].remove();delete audios[id]}}
+function syncVoice(){Object.keys(PCs).forEach(id=>{const q=S.pl.find(x=>x.id==id);if(!q||!q.v)hang(id)})}
+function micSync(){
+  if(!LS)return;
+  const night=S&&S.game=="cidade"&&S.g&&(S.g.ph=="night"||!S.g.me.a);
+  LS.getAudioTracks().forEach(t=>t.enabled=!muted&&!night);
+}
+const voiceBar=()=>'<div class="vb"><button class="btn2" onclick="voice()">'+(LS?(muted?"🔇 Ativar microfone":"🎙️ Silenciar"):"🎙️ Entrar no chat de voz")+'</button> <span class="l">'+S.pl.filter(q=>q.v).length+" na voz</span></div>"+(toast?'<p class="dn">'+toast+"</p>":"");
+
+/* ---------- telas ---------- */
+function draw(){
+  document.body.className=S&&S.game=="cidade"&&S.g&&S.g.ph=="night"?"night":"";
+  A.innerHTML=!S?menu():!S.go?lobby():S.game=="metropole"?metro():cidade();
+  micSync();
+}
+const menu=()=>'<h1>Sala de Jogos</h1><p class="l">Jogue com os amigos, cada um no seu aparelho, com chat de voz.</p><input id="nm" placeholder="Seu nome" maxlength="14" value="'+name+'" oninput="name=this.value;try{localStorage.nome=name}catch{}">'
++'<div class="gs">'+Object.entries(GM).map(([k,g])=>'<div class="gc" style="--c:'+g.c+'"><div class="ga">'+g.e+"</div><h2>"+g.n+"</h2><p>"+g.d+'</p><p class="l">'+g.min+" a "+g.max+' jogadores</p><button class="btn" onclick="mk(\''+k+'\')">Criar sala</button></div>').join("")+'<div class="gc" style="--c:#999"><div class="ga">🎲</div><h2>Mais jogos em breve</h2><p class="l">Novos jogos aparecem aqui no menu.</p></div></div>'
++'<div><input id="cd" placeholder="Código da sala" maxlength="4" style="text-transform:uppercase;width:150px"><button class="btn" onclick="jn()">Entrar numa sala</button></div>'+(toast?'<p class="dn">'+toast+"</p>":"");
+function lobby(){
+  const g=GM[S.game],h=S.you==S.host;
+  return voiceBar()+"<h1>"+g.e+" "+g.n+'</h1><div class="code">'+S.room+'</div><p class="l">Passe este código aos amigos para entrarem na sala.</p><div class="sc">'
+  +S.pl.map(q=>'<span style="border-color:'+(q.on?"#1fa971":"#999")+'">'+q.name+(q.id==S.host?" 👑":"")+"</span>").join("")+"</div>"
+  +(h?'<button class="btn" onclick="st()"'+(S.pl.length<g.min?" disabled":"")+">Começar ("+S.pl.length+"/"+g.min+" mínimo)</button>":'<p class="l">Aguardando o anfitrião começar...</p>')
+  +'<div><button class="btn2" onclick="leave()">Sair</button></div>';
+}
+const BI={"Cuiabá":"selva","Campo Grande":"campo","Palmas":"campo","Vitória":"praia","Aracaju":"praia","Natal":"praia","João Pessoa":"praia","Maceió":"praia","Teresina":"campo","Goiânia":"campo","Florianópolis":"praia","Manaus":"selva","Belém":"selva","Fortaleza":"praia","Recife":"praia","Curitiba":"serra","Porto Alegre":"serra","Salvador":"praia","Belo Horizonte":"serra","Brasília":"cidade","São Paulo":"cidade","Rio de Janeiro":"serra"};
+const rc=(x,y,w,h,f,o)=>'<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" fill="'+f+'"'+(o?' opacity="'+o+'"':"")+"/>",ci=(x,y,r,f)=>'<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="'+f+'"/>',pa=(d,f,s)=>'<path d="'+d+'" fill="'+(f||"none")+'"'+(s?' stroke="'+s+'" stroke-width="1.4"':"")+"/>";
+function art(i,T,id){
+  id=id||"g";const t=T[i],k=t[1],h=i*37+11;let sky="#7ad0f0",g2="#ffe9b0",b="";
+  if(k=="p"){
+    const bi=BI[t[0]]||"cidade";
+    if(bi=="praia")b=ci(96,13,7,"#ffd23f")+rc(0,34,120,22,"#2aa6d9")+pa("M0 38q10-4 20 0t20 0 20 0 20 0 20 0 20 0","","#ffffffaa")+pa("M0 45q10-4 20 0t20 0 20 0 20 0 20 0 20 0","","#ffffff66")+rc(0,50,120,6,"#f3d9a0")+pa("M20 50q2-18 6-26","","#7a5230")+pa("M26 24q-10-4-14 4M26 24q-2-9-12-9M26 24q8-6 16 0M26 24q10 0 14 8","","#1a9a5b");
+    else if(bi=="selva"){sky="#a6e3b5";g2="#e8f7c8";b=ci(98,12,6,"#ffe27a")+rc(0,40,120,16,"#1f7a4d")+pa("M0 48q20-8 40 0t40 0 40 0V56H0Z","#6b4f26")+[8,28,52,76,100].map((x,j)=>rc(x+2,30+j%2*3,3,14,"#5b3a1a")+ci(x+3.5,28+j%2*3,9,j%2?"#2e9b57":"#237a45")).join("")}
+    else if(bi=="campo")b=ci(96,12,7,"#ffd23f")+pa("M0 36q30-14 60 0t60 0V56H0Z","#d9b441")+pa("M0 44q30-10 60 0t60 0V56H0Z","#b88a2a")+[10,26,42,58,74,90,106].map(x=>rc(x,48,1.5,6,"#7a5a1a")).join("")+rc(80,26,2,14,"#7a5230")+pa("M81 26l10-4M81 26l-10 4M81 26l-4-10M81 26l4 10","","#444");
+    else if(bi=="serra"){sky="#9ac7ee";g2="#e6f1fb";b=ci(98,12,6,"#fff3b0")+pa("M0 56L28 14l22 26 18-18 30 34Z","#5f7f9e")+pa("M28 14l-7 9 7-3 5 5Z","#fff")+pa("M0 56L18 36l16 20Z","#3e6b4f")+pa("M70 56l20-22 30 22Z","#3e6b4f")+(t[0]=="Rio de Janeiro"?rc(27,5,2,10,"#fff")+rc(23,8,10,1.6,"#fff"):"")}
+    else{sky="#ffb86b";g2="#ffe3b3";b=ci(98,12,7,"#fff3b0")+(t[0]=="Brasília"?pa("M10 56Q30 14 50 56","","#fff")+pa("M60 56Q80 14 100 56","","#fff")+rc(0,52,120,4,"#8aa0a8"):[0,1,2,3,4,5,6,7,8].map(j=>{const hh=16+(i*7+j*13)%30;return rc(j*13+2,56-hh,11,hh,"#2d3e50",.9)+rc(j*13+5,56-hh+3,2,2,"#ffd23f")+rc(j*13+8,56-hh+8,2,2,"#ffd23f")}).join(""))}
+  }else{
+    [sky,g2]={r:["#9ac7ee","#e6f1fb"],u:["#1b2152","#4b5bd6"],x:["#2f6f4f","#bfe3c8"],c:["#6b3fa0","#d8b8ff"],k:["#8a5a2b","#f0d09a"],j:["#555","#999"],g:["#2f6fed","#ff9a9a"],f:["#e0559c","#ffd23f"],s:["#ffc72c","#fff3b0"]}[k];
+    if(k=="r")b=rc(0,40,120,16,"#8d6a3a")+rc(0,44,120,2,"#444")+rc(0,50,120,2,"#444")+[0,1,2,3,4,5,6,7,8,9,10,11].map(j=>rc(j*10+2,42,4,12,"#5b3a1a")).join("");
+    else if(k=="u")b=ci(60,28,26,"#ffd23f")+ci(60,28,16,"#fff3b0");
+    else if(k=="x")b=pa("M10 24L60 6l50 18Z","#f5f5f5")+[0,1,2,3,4].map(j=>rc(18+j*20,26,8,22,"#fff")).join("")+rc(6,48,108,8,"#ddd");
+    else if(k=="k")b=rc(26,24,68,30,"#6b3f1a")+rc(26,24,68,9,"#8a5a2b")+rc(56,32,8,9,"#ffd23f")+ci(14,14,1.5,"#fff")+ci(106,12,1.5,"#fff");
+    else if(k=="c")b=[...Array(16)].map((_,j)=>ci((j*29+h)%120,(j*17+h)%50+3,1.4,"#fff")).join("");
+    else if(k=="j")b=[0,1,2,3,4,5,6,7,8].map(j=>rc(j*14+6,0,3,56,"#222")).join("");
+    else if(k=="f")b=[...Array(26)].map((_,j)=>ci((j*23+h)%120,(j*13+h)%56,2,["#fff","#ffd23f","#2f6fed","#1fa971"][j%4])).join("");
+    else if(k=="s")b=[...Array(40)].map((_,j)=>(j+(j/10|0))%2?rc(j%10*12,(j/10|0)*14,12,14,"#222",.8):"").join("");
+    else if(k=="g")b=rc(0,0,60,56,"#ff5d5d",.5)+rc(60,0,60,56,"#2f6fed",.5);
+  }
+  return '<svg viewBox="0 0 120 56" preserveAspectRatio="xMidYMid slice"><defs><linearGradient id="'+id+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+sky+'"/><stop offset="1" stop-color="'+g2+'"/></linearGradient></defs><rect width="120" height="56" fill="url(#'+id+')"/>'+b+(k=="p"?rc(0,0,120,5,G[t[3]]):"")+'<text x="60" y="40" font-size="26" text-anchor="middle">'+(LM[t[0]]||IC[k])+"</text></svg>";
+}
+function evHtml(ev,T){
+  if(!ev)return '<p class="l">Role os dados para jogar.</p>';
+  const t=T[ev.i];
+  return '<div class="ev"><div class="art">'+art(ev.i,T)+'<img src="img/'+slug(t[0])+'.jpg" alt="" onerror="this.remove()"><video src="img/'+slug(t[0])+'.mp4" autoplay muted loop playsinline onerror="this.remove()"></video></div><h2>'+ev.ti+"</h2><p>"+ev.tx+"</p>"
+  +(ev.d?'<div class="dl '+(ev.d>0?"up":"dn")+'">'+(ev.d>0?"+":"−")+"R$"+Math.abs(ev.d)+"</div>":"")+"</div>";
+}
+const btn=(l,a)=>'<button class="btn" onclick="act({a:\''+a+'\'})">'+l+"</button>";
+function tcard(g){
+  const i=sel,t=g.T[i],o=g.own[i],my=g.me==g.cur&&g.p[g.cur].a&&g.ph!="win",ow=o>=0&&o==g.me,hc=Math.round((t[2]||0)/20)*10,own=["p","r","u"].includes(t[1]);
+  const sp={s:"Quem passa pela Largada recebe R$200.",c:"Aqui você pega uma carta de Sorte.",x:"Quem para aqui paga R$"+t[2]+" de imposto.",j:"Só visitando: nada acontece. Quem está preso sai pagando R$50, usando uma carta ou tirando dupla.",f:"Carnaval: quem para aqui leva o prêmio acumulado de impostos e multas.",k:"Aqui você pega uma carta do Cofre da Cidade.",g:"Quem para aqui vai direto para a cadeia."};
+  let tx=own?"Preço R$"+t[2]+(o>=0?". Dono: "+g.p[o].n+(g.mort[i]?" (hipotecada)":"")+(g.h[i]?". Tem "+(g.h[i]==5?"um hotel":g.h[i]+" casa(s)"):""):". Sem dono ainda."):sp[t[1]];
+  if(t[1]=="p")tx+=" Aluguel base R$"+t[2]/10+", maior com todas as cidades da cor e com casas.";
+  if(t[1]=="r")tx+=" Aluguel R$25, dobrando a cada ferrovia do dono.";
+  if(t[1]=="u")tx+=" Aluguel de 4 vezes os dados (10 vezes com as duas companhias).";
+  const B=(l,a)=>'<button class="btn" onclick="act({a:\''+a+"',i:"+i+'});sel=null">'+l+"</button>";
+  let bt="";
+  if(ow&&my&&own){
+    if(t[1]=="p"&&!g.mort[i])bt+=B("Construir R$"+hc,"build")+(g.h[i]?B("Vender casa +R$"+hc/2,"sell"):"");
+    bt+=g.mort[i]?B("Resgatar −R$"+Math.round(t[2]/2*1.1),"unmort"):B("Hipotecar +R$"+t[2]/2,"mort");
+  }
+  return '<div class="ev"><div class="art">'+art(i,g.T)+"</div><h2>"+t[0]+"</h2><p>"+tx+"</p><div>"+bt+'<button class="btn2" onclick="sel=null;draw()">Fechar</button></div></div>';
+}
+function metro(){
+  const g=S.g,T=g.T,cur=g.p[g.cur],mine=g.me==g.cur&&cur.a,f="⚀⚁⚂⚃⚄⚅";
+  let b="";
+  T.forEach((t,i)=>{const[r,c]=pos(i);
+    b+='<div class="t'+(cur.pos==i?" on":"")+'" style="grid-area:'+r+" / "+c+(g.own[i]>=0?";box-shadow:inset 0 -5px 0 "+PC[g.own[i]]:"")+'" onclick="sel='+i+';draw()">'
+    +'<span class="ti">'+art(i,T,"t"+i)+'</span><span class="nm">'+t[0]+(t[2]?"<br>R$"+t[2]:"")+"</span>"
+    +(g.mort[i]?"<em>🔒</em>":g.h[i]?"<em>"+(g.h[i]==5?"🏨":"🏠".repeat(g.h[i]))+"</em>":"")+'<div class="k">'+g.p.filter(q=>q.a&&q.pos==i).map(q=>PE[q.i]).join("")+"</div></div>"});
+  const a1=g.ph=="win"?btn("Voltar ao menu","x").replace("act({a:'x'})","leave()"):!mine?'<span class="l">Vez de '+cur.n+"...</span>":g.ph=="roll"?(cur.jail?btn("Tentar dupla","roll")+btn("Pagar R$50","pay")+(cur.card?btn("Usar carta","card"):""):btn("Rolar dados","roll")):g.ph=="buy"?'<button class="btn" onclick="act({a:\'buy\'})"'+(cur.m<T[cur.pos][2]?" disabled":"")+">Comprar por R$"+T[cur.pos][2]+"</button>"+btn("Passar","skip"):btn("Próximo jogador","next");
+  const head=(g.ph=="win"?"<h2>🏆 "+g.p.find(q=>q.a).n+" venceu!</h2>":"<div>"+PE[cur.i]+" <b>"+cur.n+"</b> · R$"+cur.m+(cur.jail?" 🔒 preso":"")+"</div>")+'<div class="sc"><span style="border-color:#e0559c">🎭 Carnaval R$'+g.pot+"</span>"+(g.news?'<span style="border-color:'+(g.news.t=="boom"?"#1a9a5b":"#e03a3a")+'">📰 '+(g.news.t=="boom"?"aluguel em dobro":"aluguel pela metade")+" · cor "+g.news.c+"</span>":"")+"</div>";
+  return voiceBar()+'<div id="board">'+b+'<div id="mid">'+head+'<div class="d">'+f[g.dice[0]-1]+" "+f[g.dice[1]-1]+"</div>"+(sel!=null?tcard(g):evHtml(g.ev,T))+"<div>"+a1+'</div><div class="sc">'
+  +g.p.map(q=>'<span class="'+(q.a?"":"out")+'" style="border-color:'+PC[q.i]+'">'+PE[q.i]+" "+q.n+" R$"+q.m+(q.jail?" 🔒":"")+(q.card?" 🎫"+q.card:"")+"</span>").join("")+"</div></div></div>"
+  +'<p class="l">Toque em qualquer casa para ver os detalhes. Na sua vez, nas suas propriedades, dá para construir, vender casas e hipotecar.</p>';
+}
+const scene=n=>'<svg viewBox="0 0 120 36" style="width:min(100%,280px);border-radius:12px;border:2px solid var(--line)"><rect width="120" height="36" fill="'+(n?"#1b2152":"#7ad0f0")+'"/>'+(n?'<circle cx="98" cy="9" r="6" fill="#f6f1c8"/><circle cx="20" cy="8" r=".9" fill="#fff"/><circle cx="48" cy="14" r=".9" fill="#fff"/><circle cx="70" cy="6" r=".9" fill="#fff"/>':'<circle cx="98" cy="9" r="6" fill="#ffd23f"/>')+[0,1,2,3,4,5,6,7].map(i=>{const h=12+(i*7)%12;return'<rect x="'+(i*15+2)+'" y="'+(36-h)+'" width="12" height="'+h+'" fill="'+(n?"#0a0f24":"#3b5b6b")+'"/>'+(n?'<rect x="'+(i*15+6)+'" y="'+(36-h+3)+'" width="3" height="3" fill="#ffd23f"/>':"")}).join("")+"</svg>";
+const ROLES={assassino:["🔪","Assassino","Mate um inocente por noite sem ser descoberto."],detetive:["🕵️","Detetive","Investigue uma pessoa por noite."],"médico":["🩺","Médico","Proteja uma pessoa por noite."],"cidadão":["🏠","Cidadão","Descubra os assassinos e vote para expulsá-los."]};
+const pick=(l,a)=>l.map(q=>'<button class="btn" onclick="act({a:\''+a+"',t:'"+q.id+'\'})">'+q.n+"</button>").join(" ");
+function cidade(){
+  const g=S.g,me=g.me,h=S.you==S.host,r=ROLES[me.r],al=g.p.filter(q=>q.a);let body="";
+  if(g.ph=="end")body="<h2>"+g.win+" venceram!</h2>"+g.p.map(q=>"<div>"+ROLES[q.r][0]+" "+q.n+" — "+ROLES[q.r][1]+(q.a?"":" (fora)")+"</div>").join("")+'<button class="btn" onclick="leave()">Voltar ao menu</button>';
+  else if(!me.a)body="<p>Você está fora do jogo, mas pode assistir. Não revele nada!</p>";
+  else if(g.ph=="night")body=me.r=="cidadão"||g.acted?"<p>Você dorme... aguarde os outros.</p>":"<p>Quem você escolhe?</p>"+pick(al.filter(q=>q.id!=me.id&&!(me.r=="assassino"&&q.r=="assassino")),"night");
+  else body=g.voted?"<p>Voto registrado. Aguarde os outros ("+g.nv+"/"+al.length+").</p>":"<p>Em quem você vota para expulsar?</p>"+pick(al.filter(q=>q.id!=me.id),"vote");
+  return voiceBar()+scene(g.ph=="night")+"<h1>"+(g.ph=="night"?"🌙 Noite ":"☀️ Dia ")+g.day+'</h1><div class="ev"><div class="ga">'+r[0]+"</div><h2>Você é "+r[1]+"</h2><p>"+r[2]+"</p></div>"
+  +(g.ev?"<h2>"+g.ev.ti+"</h2><p>"+g.ev.tx+"</p>":"")+(g.res?"<p>🔎 "+g.res+"</p>":"")+"<div>"+body+"</div>"
+  +'<div class="sc">'+g.p.map(q=>'<span class="'+(q.a?"":"out")+'">'+q.n+(q.r&&g.ph!="end"&&q.id!=me.id?" 🔪":"")+"</span>").join("")+"</div>"
+  +(h&&g.ph!="end"?'<button class="btn2" onclick="act({a:\'force\'})">Encerrar etapa agora</button>':"");
+}
+draw();resume();
+</script></body></html>
